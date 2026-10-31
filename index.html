@@ -220,9 +220,9 @@ body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-r
      <div class="card stat"><h4>LAST SYNC</h4><p id="statTime" class="mono">--:--</p></div>
     </div>
     <div class="grid3">
-     <div class="card stat"><h4>KEY NEI</h4><p id="statNoKey">0</p></div>
-     <div class="card stat"><h4>LOCATION NEI</h4><p id="statNoLoc">0</p></div>
-     <div class="card stat click" onclick="goKO()" title="Key-only site gulo dekhun"><h4>KEY-ONLY (BTS data nai)</h4><p id="statKO">0</p></div>
+     <div class="card stat"><h4>Key Not Found</h4><p id="statNoKey">0</p></div>
+     <div class="card stat"><h4>Location Not Found </h4><p id="statNoLoc">0</p></div>
+     <div class="card stat click" onclick="goKO()" title="Key-only site gulo dekhun"><h4>KEY-ONLY (BTS data Not Found)</h4><p id="statKO">0</p></div>
     </div>
     <div class="card">
      <div class="sec-t">Clients</div>
@@ -263,14 +263,14 @@ body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-r
     <input type="file" id="fileInputData" hidden accept=".xlsx,.xls,.csv">
     <input type="file" id="fileInputKey" hidden accept=".xlsx,.xls,.csv">
     <div class="card" style="margin-bottom:14px">
-     <div class="sec-t">Import</div><div class="sec-s">Excel / CSV theke smart merge (site ID dhore). Age preview dekhabe, tarpor Telegram e auto-backup jabe.</div>
+     <div class="sec-t">Import</div><div class="sec-s">Smart merge from Excel / CSV (based on site ID). First it will show a preview, then auto-backup will be sent to Telegram.</div>
      <div class="tools">
       <button class="btn" onclick="$('fileInputData').click()"><i class="fas fa-file-import"></i> Import Data</button>
       <button class="btn" onclick="$('fileInputKey').click()"><i class="fas fa-key"></i> Import Key</button>
      </div>
     </div>
     <div class="card" style="margin-bottom:14px">
-     <div class="sec-t">Backup</div><div class="sec-s">Master PIN lagbe</div>
+     <div class="sec-t">Backup</div><div class="sec-s">Master PIN Needed</div>
      <div class="tools">
       <button class="btn" onclick="exportMaster()"><i class="fas fa-file-export"></i> Backup Data</button>
       <button class="btn" onclick="exportKeys()"><i class="fas fa-file-medical"></i> Backup Key</button>
@@ -279,7 +279,7 @@ body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-r
      <div id="pushStatus" class="sec-s" style="margin:12px 0 0"></div>
     </div>
     <div class="card">
-     <div class="sec-t" style="color:var(--bad)">Danger zone</div><div class="sec-s">Master PIN lagbe, undo kora jay na</div>
+     <div class="sec-t" style="color:var(--bad)">Danger zone</div><div class="sec-s">Master PIN Nedded, Permenet action</div>
      <div class="tools">
       <button class="btn btn-d" onclick="wipeData()"><i class="fas fa-trash"></i> Wipe Data</button>
       <button class="btn btn-d" onclick="wipeKeyData()"><i class="fas fa-key"></i> Wipe Key Data</button>
@@ -299,14 +299,14 @@ body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-r
      <button class="btn" onclick="clearOffline()" style="margin-left:8px"><i class="fas fa-eraser"></i> Offline data muchhe felo</button>
     </div>
     <div class="card" style="margin-bottom:14px">
-     <div class="sec-t">Auto logout</div><div class="sec-s">Kichukkhon kichu na korle nije logout hobe (ei device e save thake)</div>
+     <div class="sec-t">Auto logout</div><div class="sec-s">Auto Log Out After</div>
      <select id="idleSel" class="inp" style="max-width:220px" onchange="saveIdle()">
       <option value="5">5 minutes</option><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">60 minutes</option>
      </select>
     </div>
     <div class="card admin-only" style="margin-bottom:14px">
      <div class="sec-t">Manage Users & PINs</div>
-     <div class="sec-s">Proti user-er jonno alada 6-digit PIN set korun.</div>
+     <div class="sec-s">For Every User Unique 6-digit PIN set korun.</div>
      <div class="pf">
       <input type="text" id="newUserName" class="inp" placeholder="User Name / ID" autocomplete="off">
       <input type="password" id="newUserPin" class="inp" inputmode="numeric" maxlength="6" placeholder="6-digit PIN">
@@ -321,7 +321,7 @@ body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-r
      <div class="sec-t" style="margin-top:16px">Users</div><div id="userList"></div>
     </div>
     <div class="card admin-only" style="margin-bottom:14px">
-     <div class="sec-t">Activity log</div><div class="sec-s">Latest 100 ta record</div>
+     <div class="sec-t">Activity log</div><div class="sec-s">Latest 100 record</div>
      <div class="bar" style="flex-wrap:wrap">
       <input type="text" id="logSearch" class="inp" placeholder="Search site / detail" oninput="renderLogs()" style="flex:1;min-width:160px">
       <select id="logAction" class="inp" onchange="renderLogs()" style="width:auto"></select>
@@ -331,7 +331,7 @@ body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-r
      <div id="logList"></div>
     </div>
     <div class="card admin-only" style="margin-bottom:14px">
-     <div class="sec-t">Auto backup (Telegram)</div><div class="sec-s">Dhaka somoy raat 2 tay Master + Keys Excel Telegram e pathabe</div>
+     <div class="sec-t">Auto backup (Telegram)</div><div class="sec-s">At 2 AM Dhaka time, it will send Master + Keys Excel to Telegram.</div>
      <select id="bkFreq" class="inp" style="max-width:220px" onchange="bkSave()"><option value="off">Off</option><option value="daily">Daily</option><option value="weekly">Weekly (Sunday)</option></select>
      <div id="bkInfo" class="sec-s" style="margin:10px 0"></div>
      <button class="btn" onclick="bkNow()"><i class="fas fa-cloud-arrow-up"></i> Backup now</button>
@@ -743,7 +743,7 @@ async function loadUsers() {
         const j = await bkCall('/admin/users', { action: 'list' });
         box.innerHTML = (j.users || []).length ? j.users.map(u =>
             `<div class="logrow" style="grid-template-columns:1fr auto auto"><b>${esc(u.name)}</b><span><span class="tag ${u.role === 'admin' ? 'tag-gp' : ''}">${esc(u.role)}</span>${u.blocked ? ' <span class="tag tag-robi">BLOCKED</span>' : ''}</span><span class="acts"><button class="op" data-a="${u.blocked ? 'unblock' : 'block'}" data-k="${esc(u.key)}">${u.blocked ? 'Unblock' : 'Block'}</button><button class="op" style="color:var(--bad)" data-a="delete" data-k="${esc(u.key)}">Delete</button></span></div>`
-        ).join('') : '<div class="more">Kono user nai (Master Admin alada)</div>';
+        ).join('') : '<div class="more">No user (Ahmed Faisal )</div>';
     } catch (e) { box.innerHTML = '<div class="more">User list load hoyni: ' + esc(e.message) + '</div>'; }
 }
 async function userAct(a, k) {
