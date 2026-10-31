@@ -289,12 +289,12 @@ body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-r
 
    <section class="page" id="pg-set">
     <div class="card" style="margin-bottom:14px">
-     <div class="sec-t">Appearance</div><div class="sec-s">Theme bachun (browser e save thake)</div>
+     <div class="sec-t">Appearance</div><div class="sec-s">Select your theme</div>
      <div class="swrow" id="swRow"></div>
      <button class="btn" onclick="toggleTheme()"><i class="fas fa-circle-half-stroke"></i> Next theme</button>
     </div>
     <div class="card" style="margin-bottom:14px">
-     <div class="sec-t">Session</div><div class="sec-s">Browser bondho korle auto logout hoy</div>
+     <div class="sec-t">Session</div><div class="sec-s">Browser Auto logout</div>
      <button class="btn btn-d" onclick="logout()"><i class="fas fa-right-from-bracket"></i> Logout</button>
      <button class="btn" onclick="clearOffline()" style="margin-left:8px"><i class="fas fa-eraser"></i> Offline data muchhe felo</button>
     </div>
@@ -306,7 +306,7 @@ body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-r
     </div>
     <div class="card admin-only" style="margin-bottom:14px">
      <div class="sec-t">Manage Users & PINs</div>
-     <div class="sec-s">For Every User Unique 6-digit PIN set korun.</div>
+     <div class="sec-s">For Every User Unique 6-digit PIN.</div>
      <div class="pf">
       <input type="text" id="newUserName" class="inp" placeholder="User Name / ID" autocomplete="off">
       <input type="password" id="newUserPin" class="inp" inputmode="numeric" maxlength="6" placeholder="6-digit PIN">
@@ -1108,7 +1108,7 @@ let dashLogs = [], dashLogTs = 0;
 function agoTxt(t) {
     const m = Math.floor((Date.now() - t) / 60000);
     if (m < 1) return 'ekhon'; if (m < 60) return m + ' min ago';
-    const h = Math.floor(m / 60); if (h < 24) return h + ' ghonta ago';
+    const h = Math.floor(m / 60); if (h < 24) return h + ' hours ago';
     return Math.floor(h / 24) + ' din ago';
 }
 async function loadDashLogs(force) {
@@ -1473,7 +1473,7 @@ function renderMap(fit) {
         mk.push(m);
     }
     cluster.addLayers(mk);
-    $('mapInfo').textContent = mk.length + ' ta pin' + (skipped ? ' (' + skipped + ' ta site e lat/long nai ba vul, skip kora hoyeche)' : '');
+    $('mapInfo').textContent = mk.length + ' ta pin' + (skipped ? ' (' + skipped + ' ta site e lat/long Not Applicable or Skipped)' : '');
     if (fit && mk.length) map.fitBounds(cluster.getBounds(), { padding: [30, 30], maxZoom: 15 });
 }
 
