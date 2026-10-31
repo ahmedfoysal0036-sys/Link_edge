@@ -152,8 +152,7 @@ body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-r
   <h1>Phoenix Controller</h1>
   <p>Enter PIN to continue</p>
   <input type="password" id="pinIn" class="pin" inputmode="numeric" autocomplete="current-password" placeholder="••••••" oncontextmenu="return false;" onkeydown="if(event.key==='Enter')verifyAccess()">
-  <button id="authBtn" class="btn btn-p" onclick="verifyAccess()">Unlock</button>
-  <div id="authError"></div>
+  <input type="password" id="pinIn" class="pin" inputmode="numeric" autocomplete="current-password" placeholder="••••••" oncontextmenu="return false;" onkeydown="if(event.key==='Enter')verifyAccess()">
   <div id="offHint">📴 Offline: last save kora data diye view-only mode e dhukte parben (age ekbar online login kora thakte hobe).</div>
  </div>
 </div>
@@ -172,6 +171,16 @@ body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-r
   <div class="side-foot"><button onclick="logout()"><i class="fas fa-right-from-bracket"></i>Logout</button></div>
  </aside>
  <main>
+
+<!-- 🔽 script টি nav ট্যাগের বাইরে যেকোনো জায়গায় আলাদা করে রাখতে পারেন 🔽 -->
+ <script>
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C'))) {
+            e.preventDefault();
+        }
+    });
+ </script>
+
   <div class="top">
    <button class="ib" id="menuBtn" onclick="openNav()" aria-label="Menu"><i class="fas fa-bars"></i></button>
    <h2 id="pageTitle">Dashboard</h2>
@@ -1285,6 +1294,21 @@ async function pushToTelegram() {
         st.textContent = r.ok ? '✅ Push success' : '❌ Push failed';
     } catch (e) { st.textContent = '❌ Push error'; }
     setTimeout(() => st.textContent = '', 3000);
+}
+
+// Inspect Element-e type change kora block korar script
+const pinInput = $('pinIn');
+if (pinInput) {
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'type') {
+                if (pinInput.getAttribute('type') !== 'password') {
+                    pinInput.setAttribute('type', 'password');
+                }
+            }
+        });
+    });
+    observer.observe(pinInput, { attributes: true });
 }
 
 </script>
