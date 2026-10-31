@@ -10,6 +10,11 @@
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
 <style>
 :root{--bg:#f2f4f9;--card:#fff;--side:#fff;--text:#1b2234;--muted:#6b7488;--border:#e2e6ee;--primary:#4f6df5;--primary-s:rgba(79,109,245,.12);--input:#f0f3f8;--ok:#10b981;--bad:#ef4444;--gp:#3b82f6;--robi:#ef4444;--bl:#f59e0b;--r:14px}
 [data-theme=dark]{--bg:#0c1016;--card:#151a23;--side:#10141b;--text:#e6eaf2;--muted:#8b95a8;--border:#222a38;--input:#1b212d;--primary-s:rgba(99,125,255,.16)}
@@ -121,6 +126,14 @@ body[data-role=user] .admin-only{display:none!important}
 .logrow{display:grid;grid-template-columns:120px 70px 130px 1fr;gap:10px;padding:10px 4px;border-bottom:1px solid var(--border);font-size:12.5px;align-items:center}
 .logrow .lg-t{color:var(--muted)}.logrow .lg-d{color:var(--muted);word-break:break-word}
 @media(max-width:760px){.pf{grid-template-columns:1fr}.logrow{grid-template-columns:1fr 1fr}.logrow .lg-d{grid-column:1/-1}}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.filters select.inp{width:auto;min-width:140px;flex:1;max-width:240px;height:40px;padding:0 12px}
+.chips{display:none;margin:-4px 0 12px;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{padding:6px 12px;border-radius:20px;background:var(--input);border:1px solid var(--border);font-size:12px;font-weight:600}
+.chip.x{color:var(--bad)}
+#mapBox{height:calc(100dvh - 250px);min-height:380px;border-radius:var(--r);border:1px solid var(--border);isolation:isolate;overflow:hidden}
+.mk{display:block;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35)}
+@media(max-width:760px){.filters select.inp{max-width:none;min-width:calc(50% - 5px)}.filters .btn{width:100%}}
 </style>
 </head>
 <body data-theme="dark">
@@ -143,6 +156,7 @@ body[data-role=user] .admin-only{display:none!important}
   <nav class="nav">
    <button data-p="dash" onclick="showPage('dash')" class="active"><i class="fas fa-gauge-high"></i>Dashboard</button>
    <button data-p="sites" onclick="showPage('sites')"><i class="fas fa-tower-cell"></i>Sites</button>
+   <button data-p="map" onclick="showPage('map')"><i class="fas fa-map-location-dot"></i>Map</button>
    <button class="admin-only" data-p="data" onclick="showPage('data')"><i class="fas fa-database"></i>Data Tools</button>
    <button data-p="set" onclick="showPage('set')"><i class="fas fa-gear"></i>Settings</button>
   </nav>
@@ -172,13 +186,21 @@ body[data-role=user] .admin-only{display:none!important}
 
    <section class="page" id="pg-sites">
     <div class="bar">
-     <div class="sw"><i class="fas fa-search"></i><input type="text" id="searchInput" class="inp" placeholder="Search site code, IP, node..." oninput="debounceFilter()"></div>
+     <div class="sw"><i class="fas fa-search"></i><input type="text" id="searchInput" class="inp" placeholder="Search site code, IP, node..." oninput="debounceFilter();recentShow()" onfocus="recentShow()" onblur="recentBlur()" onchange="saveRecent()" onkeydown="if(event.key==='Enter'){saveRecent();this.blur()}" autocomplete="off"></div>
      <button onclick="toggleForm('add')" class="btn btn-p"><i class="fas fa-plus"></i> New Entry</button>
     </div>
+    <div class="chips" id="recentBox"></div>
+    <div class="filters" id="filtersSites"></div>
     <div class="card tw"><table>
      <thead><tr><th>IDENTITY</th><th>IP</th><th>MODEL</th><th>LOCATION</th><th>CLIENT</th><th>KEY INFO</th><th style="text-align:center">ACTION</th></tr></thead>
      <tbody id="fullTable"></tbody>
     </table></div>
+   </section>
+
+   <section class="page" id="pg-map">
+    <div class="filters" id="filtersMap"></div>
+    <div class="sec-s" id="mapInfo"></div>
+    <div id="mapBox"></div>
    </section>
 
    <section class="page" id="pg-data">
@@ -257,6 +279,13 @@ body[data-role=user] .admin-only{display:none!important}
    </section>
   </div>
  </main>
+</div>
+
+<div class="modal" id="dupModal" style="z-index:95" onclick="if(event.target===this)dupResolve('cancel')">
+ <div class="sheet"><h3>Duplicate site paoa gese</h3>
+  <div class="sec-s" id="dupInfo"></div><div id="dupBody"></div>
+  <div class="mf" style="flex-wrap:wrap"><button class="btn btn-p" onclick="dupResolve('merge')">Merge</button><button class="btn" onclick="dupResolve('update')">Update existing</button><button class="btn" onclick="dupResolve('cancel')">Cancel</button></div>
+ </div>
 </div>
 
 <div class="toast" id="idleToast"><span id="idleMsg"></span><button class="btn btn-p" type="button">Stay logged in</button></div>
@@ -524,7 +553,7 @@ async function idleTick() {
 document.addEventListener('visibilitychange', () => { if (!document.hidden) idleTick(); });
 
 // ---------- Settings: idle, PIN, log ----------
-const LOG_LABEL = { login: 'Login', login_failed: 'Login failed', logout: 'Logout', auto_logout: 'Auto logout', add: 'Add', edit: 'Edit', delete: 'Delete',
+const LOG_LABEL = { login: 'Login', login_failed: 'Login failed', logout: 'Logout', auto_logout: 'Auto logout', add: 'Add', edit: 'Edit', merge: 'Merge', delete: 'Delete',
     import_master: 'Import data', import_keys: 'Import keys', wipe_master: 'Wipe data', wipe_keys: 'Wipe keys', export_master: 'Export data',
     export_keys: 'Export keys', push: 'Push Telegram', pin_change: 'PIN change' };
 function initSettings() {
@@ -596,7 +625,7 @@ function deleteSite() {
 }
 
 // ---------- Navigation / theme ----------
-const TITLES = { dash: 'Dashboard', sites: 'Sites', data: 'Data Tools', set: 'Settings' };
+const TITLES = { dash: 'Dashboard', sites: 'Sites', map: 'Map', data: 'Data Tools', set: 'Settings' };
 function showPage(p) {
     if (p === 'data' && ROLE !== 'admin') p = 'dash';
     document.querySelectorAll('.page').forEach(e => e.classList.toggle('active', e.id === 'pg-' + p));
@@ -604,6 +633,7 @@ function showPage(p) {
     $('pageTitle').textContent = TITLES[p];
     closeNav(); window.scrollTo(0, 0);
     if (p === 'set') initSettings();
+    if (p === 'map') openMap();
 }
 function openNav() { $('side').classList.add('open'); $('overlay').classList.add('open'); }
 function closeNav() { $('side').classList.remove('open'); $('overlay').classList.remove('open'); }
@@ -758,6 +788,7 @@ function debounceFilter() {
 function refreshUI_Internal() {
     $('statTime').innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     $('statKeysCount').innerText = Object.keys(keysData).length;
+    buildFilters(); if (mapOpen()) renderMap(false);
     updateAnalytics();
     handleFilter();
 }
@@ -794,6 +825,7 @@ function handleFilter() {
         const r = masterData[i];
         if (!Array.isArray(r)) continue;
         if (tokens.length && !match(i)) continue;
+        if (!passFilters(r)) continue;
         total++;
         if (shown >= MAX_ROWS) continue;
         shown++;
@@ -817,6 +849,7 @@ function handleFilter() {
 
 // ---------- View ----------
 function viewSite(i) {
+    if ($('pg-sites').classList.contains('active')) saveRecent();
     const r = masterData[i] || [];
     const name = (r[0] ?? '').toString().trim();
     const key = findKeyInfo(name) || 'No key info available';
@@ -864,38 +897,195 @@ function quickEdit(index) {
     toggleForm('edit');
 }
 
+// ---------- Add / Edit save, duplicate check + merge ----------
+const HEAD8 = ["Site", "IP", "Sub-Center", "Node", "Model", "Lat", "Long", "Client"];
+const FIELD_L = ['Site', 'IP', 'Sub-Center', 'Node', 'Model', 'Lat', 'Long', 'Client'];
+const s8 = (v) => String(v ?? '').trim();
+const isEmptyF = (v, i) => { v = s8(v); return v === '' || ((i === 5 || i === 6) && (v === '0' || v === '0.0')); };
+let pendingDup = null;
+
+// same site: pura naam same, ba region+number same (DHK2952 = DHK_Y2952)
+function findDup(name) {
+    ensureIndexes();
+    const u = name.toUpperCase(), ids = parseIds(name);
+    for (let i = 1; i < masterData.length; i++) {
+        const r = masterData[i];
+        if (!Array.isArray(r)) continue;
+        if (s8(r[0]).toUpperCase() === u) return i;
+        if (ids.some(a => a.reg && (masterIds[i] || []).some(b => b.reg === a.reg && b.num === a.num && typOk(a.typ, b.typ)))) return i;
+    }
+    return -1;
+}
+
 function updateMasterData() {
     const name = $('editName').value.trim();
     if (!name) return;
     const newRow = [name, $('editIP').value, $('editSub').value, $('editNode').value,
         $('editModel').value, $('editLat').value, $('editLong').value, $('editClient').value];
     const keyText = $('editKey').value.trim();
-    const sk = safeKey(name);
 
-    const newMaster = masterData.length ? [...masterData] : [["Site", "IP", "Sub-Center", "Node", "Model", "Lat", "Long", "Client"]];
-    const idx = newMaster.findIndex((r, i) => i > 0 && r && r[0]?.toString().trim().toUpperCase() === name.toUpperCase());
-    const oldRow = idx !== -1 ? (newMaster[idx] || []) : null;
-    const keyChanged = !!keyText && keyText !== findKeyInfo(name, true);
+    if (!editOrigName) {   // New Entry: duplicate check
+        const d = findDup(name);
+        if (d !== -1) { showDup(d, newRow, keyText); return; }
+    }
+    const idx = masterData.findIndex((r, i) => i > 0 && r && r[0]?.toString().trim().toUpperCase() === name.toUpperCase());
+    const oldRow = idx !== -1 ? (masterData[idx] || []) : null;
+    const changed = oldRow ? FIELD_L.filter((_, i) => s8(oldRow[i]) !== s8(newRow[i])) : [];
+    if (keyText && keyText !== findKeyInfo(name, true)) changed.push('Key');
+    commitRow(idx, newRow, keyText, name, oldRow ? 'edit' : 'add', name,
+        oldRow ? (changed.join(', ') || 'no change') : (keyText ? 'with key' : ''));
+}
+
+function commitRow(idx, newRow, keyText, keyName, act, site, detail) {
+    const newMaster = masterData.length ? [...masterData] : [HEAD8.slice()];
     if (idx !== -1) newMaster[idx] = newRow; else newMaster.push(newRow);
-
-    // ke ki bodlalo (shudhu field er naam, value na)
-    const L = ['Site', 'IP', 'Sub-Center', 'Node', 'Model', 'Lat', 'Long', 'Client'];
-    const changed = oldRow ? L.filter((_, i) => String(oldRow[i] ?? '').trim() !== String(newRow[i] ?? '').trim()) : [];
-    if (keyChanged) changed.push('Key');
-
     let ops;
     if (masterIsArr && masterData.length) ops = [db.ref('professor_master_db/' + (idx !== -1 ? idx : masterData.length)).set(newRow)];   // shudhu ei row
     else if (ROLE === 'admin') ops = [db.ref('professor_master_db').set(newMaster)];
     else { alert('Ekhon save kora jachchhe na, Admin ke jananu.'); return; }
-    if (keyText) ops.push(db.ref('professor_keys_db/' + sk).set(keyText));   // shudhu ei site er key, baki key chhuy na
-
+    const sk = safeKey(keyName);
+    if (keyText) ops.push(db.ref('professor_keys_db/' + sk).set(keyText));   // shudhu ei site er key
     Promise.all(ops).then(() => {
         masterData = newMaster;
         if (keyText) keysData = { ...keysData, [sk]: keyText };
-        logAct(oldRow ? 'edit' : 'add', name, oldRow ? (changed.join(', ') || 'no change') : (keyText ? 'with key' : ''));
+        logAct(act, site, detail);
         alert('✅ Record & Key Updated Successfully!');
         toggleForm('hide'); refreshUI_Internal();
     }).catch(err => alert('❌ Firebase Error: ' + err.message));
+}
+
+function showDup(i, newRow, keyText) {
+    pendingDup = { idx: i, newRow, keyText };
+    const old = masterData[i] || [];
+    $('dupInfo').textContent = '"' + s8(old[0]) + '" already ache. Ki korben?';
+    const rows = FIELD_L.map((l, k) => {
+        const a = s8(old[k]), b = s8(newRow[k]);
+        return (!b || a === b) ? '' : `<div class="kv"><span>${l}</span><b>${esc(a || '-')} → ${esc(b)}</b></div>`;
+    }).join('') + (keyText ? '<div class="kv"><span>Key info</span><b>notun key note ache</b></div>' : '');
+    $('dupBody').innerHTML = (rows || '<div class="sec-s">Notun kono alada value nei.</div>') +
+        '<div class="sec-s" style="margin-top:12px"><b>Merge:</b> khali field notun value diye bhorbe, key info jog hobe, existing data overwrite hobe na.<br><b>Update existing:</b> puro replace.</div>';
+    $('dupModal').classList.add('open');
+}
+
+function dupResolve(kind) {
+    const d = pendingDup;
+    $('dupModal').classList.remove('open');
+    if (kind === 'cancel' || !d) return;
+    pendingDup = null;
+    if (kind === 'update') { commitRow(d.idx, d.newRow, d.keyText, d.newRow[0], 'edit', d.newRow[0], 'replaced (duplicate)'); return; }
+    const old = masterData[d.idx] || [], exName = s8(old[0]), filled = [];
+    const row = FIELD_L.map((_, i) => {
+        if (i === 0) return exName;
+        if (isEmptyF(old[i], i) && !isEmptyF(d.newRow[i], i)) { filled.push(FIELD_L[i]); return d.newRow[i]; }
+        return old[i] ?? '';
+    });
+    const exKey = findKeyInfo(exName, true);
+    let keyOut = '';
+    if (d.keyText && !exKey.includes(d.keyText)) { keyOut = exKey ? exKey + SEP + d.keyText : d.keyText; filled.push('Key'); }
+    commitRow(d.idx, row, keyOut, exName, 'merge', exName, filled.join(', ') || 'nothing new');
+}
+
+// ---------- Dropdown filters (Client / Sub-Center / Model) ----------
+const filt = { client: '', sub: '', model: '' };
+const FCOL = { client: 7, sub: 2, model: 4 };
+const FLAB = { client: 'All Clients', sub: 'All Sub-Centers', model: 'All Models' };
+let filtSig = '';
+function passFilters(r) {
+    for (const k in filt) if (filt[k] && s8(r[FCOL[k]]).toUpperCase() !== filt[k]) return false;
+    return true;
+}
+function buildFilters() {
+    const opts = {};
+    for (const k in FCOL) {
+        const m = new Map();
+        for (let i = 1; i < masterData.length; i++) {
+            const r = masterData[i];
+            if (!Array.isArray(r)) continue;
+            const v = s8(r[FCOL[k]]);
+            if (v && !m.has(v.toUpperCase())) m.set(v.toUpperCase(), v);
+        }
+        opts[k] = [...m].sort((x, y) => x[1].localeCompare(y[1]));
+    }
+    const sig = JSON.stringify(opts);
+    if (sig === filtSig) return;
+    filtSig = sig;
+    for (const k in filt) if (filt[k] && !opts[k].some(([u]) => u === filt[k])) filt[k] = '';
+    const html = Object.keys(FCOL).map(k =>
+        `<select class="inp fsel" data-k="${k}" onchange="onFilter(this)"><option value="">${FLAB[k]}</option>` +
+        opts[k].map(([u, v]) => `<option value="${esc(u)}"${filt[k] === u ? ' selected' : ''}>${esc(v)}</option>`).join('') + '</select>'
+    ).join('') + '<button class="btn" onclick="clearFilters()"><i class="fas fa-filter-circle-xmark"></i> Clear filters</button>';
+    $('filtersSites').innerHTML = html; $('filtersMap').innerHTML = html;
+}
+function onFilter(el) {
+    filt[el.dataset.k] = el.value;
+    document.querySelectorAll('.fsel[data-k="' + el.dataset.k + '"]').forEach(x => x.value = el.value);
+    handleFilter(); if (mapOpen()) renderMap(true);
+}
+function clearFilters() {
+    for (const k in filt) filt[k] = '';
+    document.querySelectorAll('.fsel').forEach(x => x.value = '');
+    handleFilter(); if (mapOpen()) renderMap(true);
+}
+
+// ---------- Recent searches (browser e thake) ----------
+const RK = 'phoenix_recent';
+function recentGet() { try { return JSON.parse(localStorage.getItem(RK)) || []; } catch (_) { return []; } }
+function recentSet(a) { try { localStorage.setItem(RK, JSON.stringify(a.slice(0, 8))); } catch (_) {} }
+function saveRecent() {
+    const q = $('searchInput').value.trim().replace(/\s+/g, ' ');
+    if (q.length < 2) return;
+    recentSet([q, ...recentGet().filter(x => x.toUpperCase() !== q.toUpperCase())]);
+}
+function recentShow() {
+    const a = recentGet(), box = $('recentBox');
+    if (!a.length || $('searchInput').value.trim()) { box.style.display = 'none'; return; }
+    box.innerHTML = a.map((x, i) => `<button class="chip" data-i="${i}">${esc(x)}</button>`).join('') + '<button class="chip x" data-clear="1">Clear</button>';
+    box.style.display = 'flex';
+}
+function recentBlur() { setTimeout(() => { $('recentBox').style.display = 'none'; }, 300); }
+$('recentBox').addEventListener('mousedown', (e) => e.preventDefault());
+$('recentBox').addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.clear) recentSet([]);
+    else { const q = recentGet()[+b.dataset.i]; if (q) { $('searchInput').value = q; handleFilter(); saveRecent(); } }
+    $('recentBox').style.display = 'none'; $('searchInput').blur();
+});
+
+// ---------- Map (Leaflet + OpenStreetMap) ----------
+let map = null, cluster = null;
+const mapOpen = () => $('pg-map').classList.contains('active');
+function clientColor(c) {
+    c = s8(c).toUpperCase();
+    return c.includes('GRAMEEN') ? '#3b82f6' : c.includes('ROBI') ? '#ef4444' : c.includes('BANGLALINK') ? '#f59e0b' : '#8b95a8';
+}
+function openMap() {
+    if (typeof L === 'undefined' || !L.markerClusterGroup) { $('mapInfo').textContent = 'Map library load hoyni, internet check korun.'; return; }
+    if (!map) {
+        map = L.map('mapBox').setView([23.8, 90.4], 7);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+        cluster = L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 50 }).addTo(map);
+    }
+    setTimeout(() => { map.invalidateSize(); renderMap(true); }, 50);
+}
+function renderMap(fit) {
+    if (!map) return;
+    cluster.clearLayers();
+    const mk = []; let skipped = 0;
+    for (let i = 1; i < masterData.length; i++) {
+        const r = masterData[i];
+        if (!Array.isArray(r) || !passFilters(r)) continue;
+        const lat = parseFloat(r[5]), lng = parseFloat(r[6]);
+        if (!isFinite(lat) || !isFinite(lng) || !lat || !lng || Math.abs(lat) > 90 || Math.abs(lng) > 180) { skipped++; continue; }
+        const m = L.marker([lat, lng], { icon: L.divIcon({ className: '', html: `<span class="mk" style="background:${clientColor(r[7])}"></span>`, iconSize: [14, 14], iconAnchor: [7, 7] }) });
+        const tip = document.createElement('span'); tip.textContent = s8(r[0]);
+        m.bindTooltip(tip);
+        m.on('click', () => viewSite(i));
+        mk.push(m);
+    }
+    cluster.addLayers(mk);
+    $('mapInfo').textContent = mk.length + ' ta pin' + (skipped ? ' (' + skipped + ' ta site e lat/long nai ba vul, skip kora hoyeche)' : '');
+    if (fit && mk.length) map.fitBounds(cluster.getBounds(), { padding: [30, 30], maxZoom: 15 });
 }
 
 // ---------- Wipe / Export / Push ----------
