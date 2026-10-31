@@ -23,8 +23,28 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
 <style>
-:root{--bg:#f2f4f9;--card:#fff;--side:#fff;--text:#1b2234;--muted:#6b7488;--border:#e2e6ee;--primary:#4f6df5;--primary-s:rgba(79,109,245,.12);--input:#f0f3f8;--ok:#10b981;--bad:#ef4444;--gp:#3b82f6;--robi:#ef4444;--bl:#f59e0b;--r:14px}
+:root{--bg:#f2f4f9;--card:#fff;--side:#fff;--text:#1b2234;--muted:#6b7488;--border:#e2e6ee;--primary:#4f6df5;--primary-s:rgba(79,109,245,.12);--input:#f0f3f8;--ok:#10b981;--bad:#ef4444;--gp:#3b82f6;--robi:#ef4444;--bl:#f59e0b;--on-primary:#fff;--r:14px}
 [data-theme=dark]{--bg:#0c1016;--card:#151a23;--side:#10141b;--text:#e6eaf2;--muted:#8b95a8;--border:#222a38;--input:#1b212d;--primary-s:rgba(99,125,255,.16)}
+[data-theme=neon]{--bg:#05060d;--card:#0b0d18;--side:#080a14;--text:#e8fbff;--muted:#7f93b5;--border:#1c2a44;--input:#101426;--primary:#00e5ff;--primary-s:rgba(0,229,255,.14);--on-primary:#00141a;--ok:#39ff88}
+[data-theme=ocean]{--bg:#071a2b;--card:#0c2740;--side:#09203a;--text:#e3f2ff;--muted:#8fb0cc;--border:#17405f;--input:#0f3050;--primary:#22b8ee;--primary-s:rgba(34,184,238,.16);--on-primary:#03121c}
+[data-theme=sunset]{--bg:#1b0f1f;--card:#2a1630;--side:#22122a;--text:#fdeee6;--muted:#c9a0a8;--border:#4a2a42;--input:#341b3a;--primary:#ff7a45;--primary-s:rgba(255,122,69,.16);--on-primary:#1b0a05}
+[data-theme=neon] .btn-p{box-shadow:0 0 14px rgba(0,229,255,.45)}
+[data-theme=neon] .nav button.active{box-shadow:0 0 12px rgba(0,229,255,.3)}
+[data-theme=neon] .card{box-shadow:0 0 0 1px rgba(0,229,255,.06)}
+body.theme-fade,body.theme-fade .card,body.theme-fade .side,body.theme-fade .top,body.theme-fade .inp,body.theme-fade .btn,body.theme-fade .tag,body.theme-fade table,body.theme-fade th,body.theme-fade td,body.theme-fade .sheet{transition:background-color .35s ease,color .35s ease,border-color .35s ease,box-shadow .35s ease}
+@media(prefers-reduced-motion:reduce){body.theme-fade,body.theme-fade *{transition:none!important}}
+.swrow{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.sw-th{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;border:2px solid var(--border);background:var(--input);font-weight:600}
+.sw-th.on{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-s)}
+.swc{width:22px;height:22px;border-radius:50%;border:1px solid rgba(128,128,128,.4);display:inline-block}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+.stat.click{cursor:pointer}.stat.click:hover{border-color:var(--primary)}
+.stat small{display:block;margin-top:4px;color:var(--muted);font-size:12px}
+.dl{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+.dl:last-child{border-bottom:0}.dl small{color:var(--muted)}
+.dl.c{display:block}.dl.c small{display:block;margin-top:2px;word-break:break-word}
+.dh{display:flex;justify-content:space-between;align-items:center}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:14px;-webkit-text-size-adjust:100%}
@@ -41,7 +61,7 @@ input,textarea,select{font:inherit;color:var(--text)}
 .pin:focus,.inp:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-s)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border-radius:10px;font-weight:600;font-size:13px;border:1px solid var(--border);background:var(--card);transition:.15s}
 .btn:hover{border-color:var(--primary);color:var(--primary)}
-.btn-p{background:var(--primary);border-color:var(--primary);color:#fff!important}.btn-p:hover{filter:brightness(1.1)}
+.btn-p{background:var(--primary);border-color:var(--primary);color:var(--on-primary)!important}.btn-p:hover{filter:brightness(1.1)}
 .btn-d{color:var(--bad);border-color:rgba(239,68,68,.35)}.btn-d:hover{background:rgba(239,68,68,.08);color:var(--bad);border-color:var(--bad)}
 .btn:disabled{opacity:.6}
 #authBtn{width:100%;margin-top:12px;padding:13px}
@@ -94,6 +114,8 @@ tbody tr:hover{background:var(--primary-s)}
 .op.v{color:var(--primary);border-color:var(--primary-s);background:var(--primary-s)}
 .ipc{background:var(--input);padding:4px 8px;border-radius:6px;font-weight:600}
 .more{text-align:center;color:var(--muted);padding:14px}
+.tag-ko{background:rgba(245,158,11,.18);color:#d97706;white-space:nowrap}
+.ko-row td.id{line-height:1.7}
 /* modal */
 .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);z-index:90;padding:12px}
 .modal.open{display:flex}
@@ -145,6 +167,7 @@ body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-r
 </style>
 </head>
 <body data-theme="dark">
+<script>try{var _t=localStorage.getItem('phoenix_theme');if(_t&&/^(dark|light|neon|ocean|sunset)$/.test(_t))document.body.setAttribute('data-theme',_t)}catch(e){}</script>
 
 <div id="loginGate">
  <div class="auth-card">
@@ -193,14 +216,27 @@ body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-r
    <section class="page active" id="pg-dash">
     <div class="grid3">
      <div class="card stat"><h4>TOTAL SITES</h4><p id="statTotal">0</p></div>
-     <div class="card stat"><h4>TOTAL KEYS</h4><p id="statKeysCount">0</p></div>
+     <div class="card stat"><h4>TOTAL KEYS</h4><p id="statKeysCount">0</p><small id="statKoSub"></small></div>
      <div class="card stat"><h4>LAST SYNC</h4><p id="statTime" class="mono">--:--</p></div>
+    </div>
+    <div class="grid3">
+     <div class="card stat"><h4>KEY NEI</h4><p id="statNoKey">0</p></div>
+     <div class="card stat"><h4>LOCATION NEI</h4><p id="statNoLoc">0</p></div>
+     <div class="card stat click" onclick="goKO()" title="Key-only site gulo dekhun"><h4>KEY-ONLY (BTS data nai)</h4><p id="statKO">0</p></div>
     </div>
     <div class="card">
      <div class="sec-t">Clients</div>
-     <div class="prow"><span class="lbl">GRAMEEN</span><div class="pbg"><div id="barGP" class="pbar" style="background:var(--gp)"></div></div><span id="cntGP" class="cnt">0</span></div>
-     <div class="prow"><span class="lbl">ROBI</span><div class="pbg"><div id="barRobi" class="pbar" style="background:var(--robi)"></div></div><span id="cntRobi" class="cnt">0</span></div>
-     <div class="prow"><span class="lbl">BANGLALINK</span><div class="pbg"><div id="barBL" class="pbar" style="background:var(--bl)"></div></div><span id="cntBL" class="cnt">0</span></div>
+     <div id="clientBars"></div>
+    </div>
+    <div class="grid2 admin-only">
+     <div class="card admin-only">
+      <div class="dh"><div class="sec-t" style="margin:0">Recent login</div><button class="btn" onclick="loadDashLogs(true)" aria-label="Refresh"><i class="fas fa-rotate"></i></button></div>
+      <div id="dashLogin"><div class="more">Loading...</div></div>
+     </div>
+     <div class="card admin-only">
+      <div class="sec-t">Last key update</div>
+      <div id="dashKey"><div class="more">Loading...</div></div>
+     </div>
     </div>
    </section>
 
@@ -227,7 +263,7 @@ body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-r
     <input type="file" id="fileInputData" hidden accept=".xlsx,.xls,.csv">
     <input type="file" id="fileInputKey" hidden accept=".xlsx,.xls,.csv">
     <div class="card" style="margin-bottom:14px">
-     <div class="sec-t">Import</div><div class="sec-s">Excel / CSV theke Firebase e upload</div>
+     <div class="sec-t">Import</div><div class="sec-s">Excel / CSV theke smart merge (site ID dhore). Age preview dekhabe, tarpor Telegram e auto-backup jabe.</div>
      <div class="tools">
       <button class="btn" onclick="$('fileInputData').click()"><i class="fas fa-file-import"></i> Import Data</button>
       <button class="btn" onclick="$('fileInputKey').click()"><i class="fas fa-key"></i> Import Key</button>
@@ -253,8 +289,9 @@ body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-r
 
    <section class="page" id="pg-set">
     <div class="card" style="margin-bottom:14px">
-     <div class="sec-t">Appearance</div><div class="sec-s">Dark / Light theme</div>
-     <button class="btn" onclick="toggleTheme()"><i class="fas fa-circle-half-stroke"></i> Toggle theme</button>
+     <div class="sec-t">Appearance</div><div class="sec-s">Theme bachun (browser e save thake)</div>
+     <div class="swrow" id="swRow"></div>
+     <button class="btn" onclick="toggleTheme()"><i class="fas fa-circle-half-stroke"></i> Next theme</button>
     </div>
     <div class="card" style="margin-bottom:14px">
      <div class="sec-t">Session</div><div class="sec-s">Browser bondho korle auto logout hoy</div>
@@ -281,6 +318,7 @@ body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-r
      <input type="password" id="adminAuthPin" class="inp" inputmode="numeric" maxlength="6" placeholder="Your Admin PIN to confirm" style="margin-bottom:10px">
      <button class="btn btn-p" onclick="addNewUser()">Add / Update User</button>
      <div id="userMgmtMsg" class="pmsg"></div>
+     <div class="sec-t" style="margin-top:16px">Users</div><div id="userList"></div>
     </div>
     <div class="card admin-only" style="margin-bottom:14px">
      <div class="sec-t">Activity log</div><div class="sec-s">Latest 100 ta record</div>
@@ -298,7 +336,7 @@ body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-r
      <div id="bkInfo" class="sec-s" style="margin:10px 0"></div>
      <button class="btn" onclick="bkNow()"><i class="fas fa-cloud-arrow-up"></i> Backup now</button>
     </div>
-    <div class="card about"><b>PHOENIX V4.2</b><br><span class="status"><i class="fas fa-circle" style="font-size:6px;color:var(--ok)"></i> System Operational</span></div>
+    <div class="card about"><b>PHOENIX V4.5</b><br><span class="status"><i class="fas fa-circle" style="font-size:6px;color:var(--ok)"></i> System Operational</span></div>
    </section>
   </div>
  </main>
@@ -311,11 +349,19 @@ body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-r
  </div>
 </div>
 
+<div class="modal" id="impModal" style="z-index:95" onclick="if(event.target===this)impResolve('cancel')">
+ <div class="sheet"><h3 id="impTitle">Import</h3>
+  <div id="impBody"></div>
+  <div class="sec-s" style="margin-top:12px"><b>Merge:</b> purono data thakbe, shudhu notun add / mil thakle update hobe.<br><b>Replace all:</b> puro replace (Admin PIN lagbe).<br>Dui khetreii age Telegram e backup jabe.</div>
+  <div class="mf" style="flex-wrap:wrap"><button class="btn btn-p" onclick="impResolve('merge')"><i class="fas fa-code-merge"></i> Merge</button><button class="btn" onclick="impResolve('replace')"><i class="fas fa-lock"></i> Replace all (PIN)</button><button class="btn" onclick="impResolve('cancel')">Cancel</button></div>
+ </div>
+</div>
+
 <div class="toast" id="idleToast"><span id="idleMsg"></span><button class="btn btn-p" type="button">Stay logged in</button></div>
 
 <div class="modal" id="viewModal" onclick="if(event.target===this)closeView()">
  <div class="sheet"><h3>Site Details</h3><div id="viewBody"></div>
-  <div class="mf"><button class="btn btn-p write-only" onclick="editFromView()"><i class="fas fa-pen"></i> Edit</button><button class="btn" onclick="copyIP()"><i class="fas fa-copy"></i> Copy IP</button><button class="btn" onclick="closeView()">Close</button></div>
+  <div class="mf"><button class="btn btn-p write-only" id="viewEditBtn" onclick="editFromView()"><i class="fas fa-pen"></i> Edit</button><button class="btn" onclick="copyData()"><i class="fas fa-copy"></i> Copy Data</button><button class="btn" onclick="closeView()">Close</button></div>
  </div>
 </div>
 
@@ -362,6 +408,7 @@ let editOrigName = '';
 let logCache = [];
 let masterIsArr = true;
 let OFFLINE = false;
+let UNAME = '';
 
         function safeKey(s) {
             return String(s || '')
@@ -373,6 +420,9 @@ let OFFLINE = false;
         }
         function esc(s) {
             return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+        function unesc(s) {
+            return String(s ?? '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
         }
         function toArray(v) {
             return Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []);
@@ -433,8 +483,49 @@ let OFFLINE = false;
         };
         const SEARCH_COLS = [0, 1, 2, 3, 4, 7];   
         let keyIdx = buildKeyIndex({}), masterHay = [], masterIds = [], _keysFor = null, _masterFor = null;
+        let keyOnly = [], _koK = null, _koM = null, koFilter = false, viewKOIdx = -1;
+
+        // Key-only: key ache kintu BTS data (master) e kono site match kore na
+        function computeKeyOnly(keysObj, names) {
+            const full = new Set(), toks = new Set(), core = new Map(), num = new Map();
+            for (const n of names) {
+                if (!n) continue;
+                const sk = safeKey(n);
+                full.add(sk);
+                sk.split(/[^A-Z0-9]+/).forEach(t => { if (t.length >= 5) toks.add(t); });
+                for (const id of parseIds(n)) {
+                    if (id.reg) addTo(core, id.reg + id.num, id);
+                    if (id.num.length >= 4) addTo(num, id.num, id);
+                }
+            }
+            const groups = new Map();
+            for (const k of Object.keys(keysObj || {})) {
+                const v = valueToString(keysObj[k]);
+                if (!v) continue;
+                const sk = safeKey(k), ids = parseIds(k);
+                let hit = full.has(sk) || toks.has(sk);
+                if (!hit) for (const id of ids) {
+                    if (id.reg && (core.get(id.reg + id.num) || []).some(m => typOk(id.typ, m.typ))) { hit = true; break; }
+                    if (id.num.length >= 4 && (num.get(id.num) || []).some(m => (!id.reg || !m.reg) && typOk(id.typ, m.typ))) { hit = true; break; }
+                }
+                if (hit) continue;
+                const g = groups.get(v) || { name: k, names: [], v, ids: [] };
+                g.names.push(k); ids.forEach(i => g.ids.push(i));
+                groups.set(v, g);
+            }
+            return [...groups.values()].map(g => {
+                const al = new Set(g.names.map(safeKey));
+                g.ids.forEach(id => { al.add(idCode(id)); if (id.reg) al.add(id.reg + id.num); al.add(id.num); });
+                g.hay = [...al].join(' | ');
+                return g;
+            }).sort((a, b) => a.name.localeCompare(b.name));
+        }
 
         function ensureIndexes() {
+            if (_koK !== keysData || _koM !== masterData) {
+                _koK = keysData; _koM = masterData;
+                keyOnly = computeKeyOnly(keysData, masterData.slice(1).map(r => Array.isArray(r) ? String(r[0] ?? '').trim() : ''));
+            }
             if (_keysFor !== keysData) { _keysFor = keysData; keyIdx = buildKeyIndex(keysData); }
             if (_masterFor !== masterData) {
                 _masterFor = masterData;
@@ -449,7 +540,7 @@ let OFFLINE = false;
 
         function findKeyInfo(siteName, editMode) {
             ensureIndexes();
-            const res = lookupKeys(siteName, keyIdx) || '';
+            const res = unesc(lookupKeys(siteName, keyIdx) || '');
             return editMode ? res.split(SEP).filter(x => !x.startsWith('(≈')).join(SEP) : res;
         }
 
@@ -482,7 +573,7 @@ async function verifyAccess() {
     try {
         const r = await api('/auth/pin', { method: 'POST', headers: JSON_H, body: JSON.stringify({ pin }) });
         const j = await r.json().catch(() => ({}));
-        if (!r.ok || !j.token) throw new Error(r.status === 429 ? 'Too many attempts. Try again later.' : r.status === 401 ? 'Wrong PIN' : 'Server error');
+        if (!r.ok || !j.token) throw new Error(r.status === 429 ? 'Too many attempts. Try again later.' : r.status === 401 ? 'Wrong PIN' : r.status === 403 ? 'Apnar access block kora hoyeche' : 'Server error');
         await auth.signInWithCustomToken(j.token);
         await prepSnap(pin, j.role).catch(() => {});
         $('pinIn').value = '';
@@ -515,9 +606,9 @@ async function logout() {
 
 function startListeners() {
     db.ref('professor_master_db').on('value', (s) => { masterData = toArray(s.val()); masterIsArr = Array.isArray(s.val()); refreshUI_Internal(); snapSoon(); },
-        (e) => alert('❌ Firebase read error (master): ' + e.message));
+        (e) => { if (/permission/i.test(e.message)) { auth.signOut(); loginNote('Access bondho kora hoyeche'); } else alert('❌ Firebase read error (master): ' + e.message); });
     db.ref('professor_keys_db').on('value', (s) => { keysData = s.val() || {}; refreshUI_Internal(); snapSoon(); },
-        (e) => alert('❌ Firebase read error (keys): ' + e.message));
+        (e) => { if (/permission/i.test(e.message)) { auth.signOut(); loginNote('Access bondho kora hoyeche'); } else alert('❌ Firebase read error (keys): ' + e.message); });
 }
 
 auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {}).then(() => {
@@ -542,7 +633,7 @@ async function applyRole(u) {
         try { 
             const claims = await u.getIdTokenResult();
             ROLE = claims.claims.role || ''; 
-            uname = claims.claims.name || '';
+            uname = claims.claims.name || ''; UNAME = uname;
         } catch (_) {}
         if (ROLE !== 'admin' && ROLE !== 'user') {   
             ROLE = ''; auth.signOut(); loginNote('Notun version e abar login korun'); return false;
@@ -559,8 +650,8 @@ function loginNote(t) {
 function logAct(action, site, detail) {
     if (!auth.currentUser || !ROLE) return Promise.resolve();
     return db.ref('activity_log').push({
-        ts: firebase.database.ServerValue.TIMESTAMP, role: ROLE, action,
-        site: String(site || '').slice(0, 200), detail: String(detail || '').slice(0, 300)
+        ts: firebase.database.ServerValue.TIMESTAMP, role: ROLE, action, name: UNAME,
+        site: String(site || '').slice(0, 200), detail: String(detail || '').slice(0, 600)
     }).catch(() => {});
 }
 
@@ -594,10 +685,10 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) idle
 // ---------- Settings: idle, PIN, log ----------
 const LOG_LABEL = { login: 'Login', login_failed: 'Login failed', logout: 'Logout', auto_logout: 'Auto logout', add: 'Add', edit: 'Edit', merge: 'Merge', delete: 'Delete',
     import_master: 'Import data', import_keys: 'Import keys', wipe_master: 'Wipe data', wipe_keys: 'Wipe keys', export_master: 'Export data',
-    export_keys: 'Export keys', push: 'Push Telegram', pin_change: 'PIN change', backup: 'Auto backup', backup_now: 'Backup now', backup_config: 'Backup setting', user_add: 'User Add', user_delete: 'User Delete' };
+    export_keys: 'Export keys', push: 'Push Telegram', pin_change: 'PIN change', backup: 'Auto backup', backup_now: 'Backup now', backup_config: 'Backup setting', user_add: 'User Add', user_delete: 'User Delete', user_block: 'User Block', user_unblock: 'User Unblock', login_blocked: 'Login blocked' };
 function initSettings() {
     $('idleSel').value = String(idleMinutes());
-    if (ROLE === 'admin') bkLoad();
+    if (ROLE === 'admin') { bkLoad(); loadUsers(); }
     if (ROLE === 'admin') {
         if ($('logAction').options.length < 2)
             $('logAction').innerHTML = '<option value="">All actions</option>' + Object.keys(LOG_LABEL).map(k => `<option value="${k}">${LOG_LABEL[k]}</option>`).join('');
@@ -638,12 +729,31 @@ async function addNewUser() {
         $('adminAuthPin').value = '';
         st.textContent = '✅ User successfully added/updated!';
         st.style.color = 'var(--ok)';
-        loadLogs();
+        loadLogs(); loadUsers();
     } catch (e) {
         st.textContent = '❌ ' + e.message;
         st.style.color = 'var(--bad)';
     }
 }
+
+async function loadUsers() {
+    if (ROLE !== 'admin') return;
+    const box = $('userList'); box.innerHTML = '<div class="more">Loading...</div>';
+    try {
+        const j = await bkCall('/admin/users', { action: 'list' });
+        box.innerHTML = (j.users || []).length ? j.users.map(u =>
+            `<div class="logrow" style="grid-template-columns:1fr auto auto"><b>${esc(u.name)}</b><span><span class="tag ${u.role === 'admin' ? 'tag-gp' : ''}">${esc(u.role)}</span>${u.blocked ? ' <span class="tag tag-robi">BLOCKED</span>' : ''}</span><span class="acts"><button class="op" data-a="${u.blocked ? 'unblock' : 'block'}" data-k="${esc(u.key)}">${u.blocked ? 'Unblock' : 'Block'}</button><button class="op" style="color:var(--bad)" data-a="delete" data-k="${esc(u.key)}">Delete</button></span></div>`
+        ).join('') : '<div class="more">Kono user nai (Master Admin alada)</div>';
+    } catch (e) { box.innerHTML = '<div class="more">User list load hoyni: ' + esc(e.message) + '</div>'; }
+}
+async function userAct(a, k) {
+    if (a === 'delete' && !confirm('"' + k + '" user ke delete korben?')) return;
+    const pin = prompt('Admin PIN diye confirm korun:');
+    if (pin === null) return;
+    try { await bkCall('/admin/users', { action: a, username: k, currentAdminPin: pin.trim() }); loadUsers(); loadLogs(); }
+    catch (e) { alert('❌ ' + e.message); }
+}
+$('userList').addEventListener('click', (e) => { const b = e.target.closest('button[data-a]'); if (b) userAct(b.dataset.a, b.dataset.k); });
 
 const fmtTs = (t) => t ? new Date(t).toLocaleString('en-GB', { timeZone: 'Asia/Dhaka', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }) : '-';
 async function loadLogs() {
@@ -690,27 +800,148 @@ function showPage(p) {
     $('pageTitle').textContent = TITLES[p];
     closeNav(); window.scrollTo(0, 0);
     if (p === 'set') initSettings();
+    if (p === 'dash') loadDashLogs(false);
     if (p === 'map') openMap();
 }
 function openNav() { $('side').classList.add('open'); $('overlay').classList.add('open'); }
 function closeNav() { $('side').classList.remove('open'); $('overlay').classList.remove('open'); }
 
-function toggleTheme() {
-    const next = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    document.body.setAttribute('data-theme', next);
-    try { localStorage.setItem('phoenix_theme', next); } catch (_) {}
-    updateThemeIcon(next);
+const THEMES = ['dark', 'light', 'neon', 'ocean', 'sunset'];
+const THEME_UI = { dark: ['Dark', '#151a23', '#637dff'], light: ['Light', '#f2f4f9', '#4f6df5'], neon: ['Neon', '#05060d', '#00e5ff'], ocean: ['Ocean', '#0c2740', '#22b8ee'], sunset: ['Sunset', '#2a1630', '#ff7a45'] };
+let fadeT = null;
+function applyTheme(t, fade) {
+    if (!THEMES.includes(t)) t = 'dark';
+    const b = document.body;
+    if (fade && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        b.classList.add('theme-fade'); clearTimeout(fadeT); fadeT = setTimeout(() => b.classList.remove('theme-fade'), 450);
+    }
+    b.setAttribute('data-theme', t);
+    try { localStorage.setItem('phoenix_theme', t); } catch (_) {}
+    updateThemeIcon(t);
+    const m = document.querySelector('meta[name=theme-color]');
+    if (m) setTimeout(() => { m.setAttribute('content', getComputedStyle(b).getPropertyValue('--bg').trim() || '#0c1016'); }, 30);
 }
-function updateThemeIcon(t) { $('themeIcon').className = t === 'dark' ? 'fas fa-sun' : 'fas fa-moon'; }
+function toggleTheme() {
+    const c = document.body.getAttribute('data-theme');
+    applyTheme(THEMES[(Math.max(THEMES.indexOf(c), 0) + 1) % THEMES.length], true);
+}
+function updateThemeIcon(t) {
+    const i = $('themeIcon'); if (i) i.className = t === 'light' ? 'fas fa-sun' : 'fas fa-moon';
+    document.querySelectorAll('.sw-th').forEach(x => x.classList.toggle('on', x.dataset.t === t));
+}
 (function () {
+    const row = $('swRow');
+    if (row) row.innerHTML = THEMES.map(k => `<button type="button" class="sw-th" data-t="${k}" onclick="applyTheme('${k}',true)"><i class="swc" style="background:linear-gradient(135deg,${THEME_UI[k][1]} 50%,${THEME_UI[k][2]} 50%)"></i>${THEME_UI[k][0]}</button>`).join('');
     let t = 'dark'; try { t = localStorage.getItem('phoenix_theme') || 'dark'; } catch (_) {}
-    document.body.setAttribute('data-theme', t); updateThemeIcon(t);
+    applyTheme(t, false);
 })();
 
 function debounceFilter() {
     clearTimeout(filterTimeout);
     filterTimeout = setTimeout(handleFilter, 200);
 }
+
+        // ---------- Smart import (merge) ----------
+        let impPend = null;
+        const stripDate = (e) => String(e).replace(/^\[[^\]]*\]\s*/, '').replace(/\s+/g, ' ').trim();
+        const HTML_ENT = /&(amp|lt|gt|quot|#39);/;
+
+        function showImp(title, rows, pend) {
+            impPend = pend;
+            $('impTitle').textContent = title;
+            $('impBody').innerHTML = rows.map(([k, v]) => `<div class="kv"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('');
+            $('impModal').classList.add('open');
+        }
+        async function impBackup() {
+            try { await bkCall('/admin/backup-now'); return true; }
+            catch (e) { return confirm('⚠️ Telegram backup hoyni (' + e.message + ').\nBackup chara cholte chan?'); }
+        }
+        async function impResolve(mode) {
+            const p = impPend;
+            if (mode === 'cancel' || !p) { impPend = null; $('impModal').classList.remove('open'); return; }
+            if (mode === 'replace' && !(await askPin('replace ALL ' + (p.kind === 'data' ? 'Master Data' : 'Key Data')))) return;
+            impPend = null; $('impModal').classList.remove('open');
+            if (OFFLINE || !navigator.onLine) { alert('Offline: import bondho.'); return; }
+            if (mode === 'merge' && !p.changed) { alert('ℹ️ Notun ba update howar moto kichu nai.'); return; }
+            if (!(await impBackup())) return;
+            try {
+                if (p.kind === 'data') {
+                    const out = mode === 'merge' ? p.merged : p.full;
+                    await db.ref('professor_master_db').set(out);
+                    masterData = out; masterIsArr = true;
+                    if (mode === 'merge') {
+                        logAct('import_master', '', 'Merge: +' + p.st.add + ' notun, ' + p.st.upd + ' update, ' + p.st.keep + ' thakbe');
+                        alert('✅ Merge hoyeche!\nNotun: ' + p.st.add + '\nUpdate: ' + p.st.upd + '\nAgey thaka (file e nai): ' + p.st.keep);
+                    } else {
+                        logAct('import_master', '', 'Replace all: ' + (out.length - 1) + ' rows');
+                        alert('✅ Master Data replace hoyeche! Rows: ' + (out.length - 1));
+                    }
+                } else if (mode === 'merge') {
+                    await db.ref('professor_keys_db').update(p.changes);
+                    keysData = { ...keysData, ...p.changes };
+                    logAct('import_keys', '', 'Merge: +' + p.st.add + ' notun key, ' + p.st.upd + ' update, ' + p.st.clean + ' clean');
+                    alert('✅ Key merge hoyeche!\nNotun key: ' + p.st.add + '\nNotun entry jog: ' + p.st.upd + '\nClean (&amp; fix): ' + p.st.clean);
+                } else {
+                    await db.ref('professor_keys_db').set(p.newKeys);
+                    keysData = p.newKeys;
+                    logAct('import_keys', '', 'Replace all: ' + Object.keys(p.newKeys).length + ' sites');
+                    alert('✅ Key Database replace hoyeche! Sites: ' + Object.keys(p.newKeys).length);
+                }
+                refreshUI_Internal();
+            } catch (err) { console.error(err); alert('❌ Firebase Error: ' + err.message); }
+        }
+
+        function prepDataImport(rows) {
+            if (!rows.length) { alert('❌ File khali.'); return; }
+            const hasHead = /site/i.test(s8(rows[0][0]));
+            const body = rows.slice(hasHead ? 1 : 0);
+            const pad = (r) => { const a = r.slice(); while (a.length < 8) a.push(''); return a; };
+            const names0 = masterData.slice(1).map(r => Array.isArray(r) ? s8(r[0]) : '');
+            const koBefore = computeKeyOnly(keysData, names0).length;
+            const work = masterData.length ? masterData.map(r => Array.isArray(r) ? r.slice() : (r ?? null)) : [hasHead ? pad(rows[0]) : HEAD8.slice()];
+            const byName = new Map(), byCore = new Map();
+            const reg = (r, i) => {
+                const n = s8(r[0]); if (!n) return;
+                if (!byName.has(n.toUpperCase())) byName.set(n.toUpperCase(), i);
+                for (const id of parseIds(n)) if (id.reg) addTo(byCore, id.reg + id.num, { i, id });
+            };
+            for (let i = 1; i < work.length; i++) if (Array.isArray(work[i])) reg(work[i], i);
+            const origLen = work.length, exist = work.slice(1).filter(Array.isArray).length;
+            const st = { file: 0, add: 0, upd: 0, same: 0, skip: 0, amb: 0, keep: 0 };
+            const addN = [], updN = [], touched = new Set();
+            for (const raw of body) {
+                const name = s8(raw[0]);
+                if (!name) { if (raw.some(c => s8(c))) st.skip++; continue; }
+                st.file++;
+                const nr = pad(raw);
+                let idx = byName.get(name.toUpperCase());
+                if (idx === undefined) {
+                    const cands = new Set();
+                    for (const id of parseIds(name)) if (id.reg) (byCore.get(id.reg + id.num) || []).forEach(c => { if (typOk(id.typ, c.id.typ)) cands.add(c.i); });
+                    if (cands.size === 1) idx = [...cands][0]; else if (cands.size > 1) st.amb++;
+                }
+                if (idx === undefined) { work.push(nr); reg(nr, work.length - 1); st.add++; addN.push(name); touched.add(work.length - 1); continue; }
+                touched.add(idx);
+                const old = work[idx]; while (old.length < 8) old.push('');
+                let ch = 0;
+                for (let c = 1; c < Math.max(old.length, nr.length); c++) {
+                    if (isEmptyF(nr[c], c)) continue;
+                    if (s8(old[c]) !== s8(nr[c])) { while (old.length <= c) old.push(''); old[c] = nr[c]; ch++; }
+                }
+                if (ch) { st.upd++; updN.push(name); } else st.same++;
+            }
+            st.keep = exist - [...touched].filter(i => i < origLen).length;
+            const koAfter = computeKeyOnly(keysData, work.slice(1).map(r => Array.isArray(r) ? s8(r[0]) : '')).length;
+            const full = hasHead ? rows : [HEAD8.slice(), ...rows];
+            const list = (a) => a.slice(0, 5).join(', ') + (a.length > 5 ? ' ...' : '');
+            const R = [['File e site', st.file], ['Notun (add hobe)', st.add], ['Update hobe', st.upd], ['Hubohu same', st.same], ['File e nai (thakbe)', st.keep]];
+            if (addN.length) R.push(['Notun site', list(addN)]);
+            if (updN.length) R.push(['Update site', list(updN)]);
+            if (st.skip) R.push(['Naam chara row (skip)', st.skip]);
+            if (st.amb) R.push(['ID mile ekadhik site (notun dhora hoyeche)', st.amb]);
+            if (koBefore > koAfter) R.push(['Key-only theke match hobe', koBefore - koAfter]);
+            showImp('Import Data: Merge preview', R, { kind: 'data', merged: work, full, st, changed: st.add + st.upd });
+        }
 
         document.getElementById('fileInputData').addEventListener('change', (e) => {
             if (ROLE !== 'admin') return;
@@ -719,18 +950,10 @@ function debounceFilter() {
             const reader = new FileReader();
             reader.onload = (event) => {
                 try {
-                    const data = new Uint8Array(event.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: "" });
-                    const clean = rows.map(r => Array.from(r, c => (c === undefined || c === null) ? "" : c));
-                    db.ref('professor_master_db').set(clean)
-                        .then(() => {
-                            masterData = clean;
-                            logAct('import_master', '', 'Rows: ' + (clean.length - 1));
-                            alert("✅ Master Data Imported & Synced! Rows: " + (clean.length - 1));
-                            refreshUI_Internal();
-                        })
-                        .catch(err => alert("❌ Firebase Error: " + err.message));
+                    const wbk = XLSX.read(new Uint8Array(event.target.result), { type: 'array' });
+                    const rows = XLSX.utils.sheet_to_json(wbk.Sheets[wbk.SheetNames[0]], { header: 1, defval: "" })
+                        .map(r => Array.from(r, c => (c === undefined || c === null) ? "" : c));
+                    prepDataImport(rows);
                 } catch (err) {
                     console.error(err);
                     alert("❌ Failed to parse Excel File.");
@@ -774,64 +997,65 @@ function debounceFilter() {
             return [...new Set(keys)];
         }
 
+        function prepKeyImport(jsonRows) {
+            const { headerRow, siteCol, keyCol, dateCol } = detectKeyColumns(jsonRows);
+            const bucket = {}, seen = {};
+            let used = 0;
+            jsonRows.forEach((r, i) => {
+                if (i <= headerRow || !r) return;
+                const rawSite = r[siteCol] ? r[siteCol].toString().trim() : '';
+                const info = r[keyCol] ? unesc(r[keyCol].toString().trim()) : '';
+                if (!rawSite || !info) return;
+                const date = dateCol >= 0 ? fmtDate(r[dateCol]) : '';
+                const entry = (date ? `[${date}] ` : '') + info;
+                siteKeysFromName(rawSite, info).forEach(k => {
+                    if (!k) return;
+                    bucket[k] = bucket[k] || [];
+                    seen[k] = seen[k] || new Set();
+                    if (seen[k].has(info)) return;
+                    seen[k].add(info);
+                    bucket[k].push(entry);
+                });
+                used++;
+            });
+            const incoming = {}, newKeys = {};
+            Object.keys(bucket).forEach(k => { incoming[k] = bucket[k].slice().reverse(); newKeys[k] = incoming[k].join(SEP); });
+            const total = Object.keys(newKeys).length;
+            if (!total) { alert("❌ Kono key data paoa jay nai. Header check korun."); return; }
+
+            const changes = {}, st = { add: 0, upd: 0, same: 0, clean: 0, keep: 0 };
+            for (const k of Object.keys(incoming)) {
+                const exRaw = valueToString(keysData[k]);
+                if (!exRaw) { changes[k] = newKeys[k]; st.add++; continue; }
+                const exArr = unesc(exRaw).split(SEP).map(x => x.trim()).filter(Boolean);
+                const have = new Set(exArr.map(stripDate));
+                const fresh = incoming[k].filter(x => !have.has(stripDate(x)));
+                if (fresh.length) { changes[k] = fresh.concat(exArr).join(SEP); st.upd++; }
+                else { st.same++; if (exRaw !== unesc(exRaw)) { changes[k] = exArr.join(SEP); st.clean++; } }
+            }
+            for (const k of Object.keys(keysData)) {
+                if (k in incoming) continue;
+                st.keep++;
+                const v = keysData[k];
+                if (typeof v === 'string' && HTML_ENT.test(v) && unesc(v) !== v) { changes[k] = unesc(v); st.clean++; }
+            }
+            const names = masterData.slice(1).map(r => Array.isArray(r) ? s8(r[0]) : '');
+            const koAfter = computeKeyOnly({ ...keysData, ...changes }, names).length;
+            const R = [['File e rows', used], ['File e site/key', total], ['Notun key', st.add], ['Notun entry jog hobe', st.upd], ['Hubohu same', st.same]];
+            if (st.clean) R.push(['&amp; theek hobe', st.clean]);
+            R.push(['File e nai (thakbe)', st.keep], ['Key-only (BTS data nai)', koAfter]);
+            showImp('Import Key: Merge preview', R, { kind: 'keys', changes, newKeys, st, changed: Object.keys(changes).length });
+        }
+
         document.getElementById('fileInputKey').addEventListener('change', (e) => {
             if (ROLE !== 'admin') return;
             const file = e.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = (event) => {
                 try {
-                    const data = new Uint8Array(event.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
-
-                    const { headerRow, siteCol, keyCol, dateCol } = detectKeyColumns(jsonRows);
-
-                    const bucket = {};
-                    const seen = {};
-                    let used = 0;
-
-                    jsonRows.forEach((r, i) => {
-                        if (i <= headerRow || !r) return;
-                        const rawSite = r[siteCol] ? r[siteCol].toString().trim() : '';
-                        const info = r[keyCol] ? r[keyCol].toString().trim() : '';
-                        if (!rawSite || !info) return;
-
-                        const date = dateCol >= 0 ? fmtDate(r[dateCol]) : '';
-                        const entry = (date ? `[${date}] ` : '') + info;
-
-                        siteKeysFromName(rawSite, info).forEach(k => {
-                            if (!k) return;
-                            bucket[k] = bucket[k] || [];
-                            seen[k] = seen[k] || new Set();
-                            if (seen[k].has(info)) return;
-                            seen[k].add(info);
-                            bucket[k].push(entry);
-                        });
-                        used++;
-                    });
-
-                    const newKeys = {};
-                    Object.keys(bucket).forEach(k => {
-                        newKeys[k] = bucket[k].slice().reverse().join('\n— — —\n');
-                    });
-
-                    const total = Object.keys(newKeys).length;
-                    if (!total) { alert("❌ Kono key data paoa jay nai. Header check korun."); return; }
-
-                    db.ref('professor_keys_db').set(newKeys)
-                        .then(() => {
-                            keysData = newKeys;
-                            logAct('import_keys', '', 'Sites: ' + total);
-                            alert(`✅ Key Database Imported!\nRows: ${used}\nSites: ${total}`);
-                            refreshUI_Internal();
-                        })
-                        .catch(err => {
-                            console.error(err);
-                            alert("❌ Firebase Error: " + err.message);
-                        });
+                    const workbook = XLSX.read(new Uint8Array(event.target.result), { type: 'array' });
+                    prepKeyImport(XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: "" }));
                 } catch (err) {
                     console.error("Import Error:", err);
                     alert("❌ Failed to parse Excel File.");
@@ -850,16 +1074,67 @@ function refreshUI_Internal() {
     handleFilter();
 }
 
+const CL_PAL = ['#8b5cf6', '#14b8a6', '#ec4899', '#eab308', '#06b6d4', '#84cc16'];
 function updateAnalytics() {
+    ensureIndexes();
     const rows = masterData.slice(1);
-    const total = rows.length;
-    $('statTotal').innerText = total;
-    const count = (s) => rows.filter(r => r && r[7]?.toString().toUpperCase().includes(s)).length;
-    const gp = count('GRAMEEN'), robi = count('ROBI'), bl = count('BANGLALINK');
-    $('cntGP').innerText = gp; $('cntRobi').innerText = robi; $('cntBL').innerText = bl;
-    $('barGP').style.width = total ? (gp / total * 100) + '%' : '0%';
-    $('barRobi').style.width = total ? (robi / total * 100) + '%' : '0%';
-    $('barBL').style.width = total ? (bl / total * 100) + '%' : '0%';
+    $('statTotal').innerText = rows.length;
+    const cl = new Map();
+    let noKey = 0, noLoc = 0;
+    for (const r of rows) {
+        if (!Array.isArray(r)) continue;
+        const raw = s8(r[7]), u = raw.toUpperCase() || 'N/A';
+        const e = cl.get(u) || { label: raw || 'N/A', n: 0 }; e.n++; cl.set(u, e);
+        if (!findKeyInfo(s8(r[0]), true)) noKey++;
+        if (isEmptyF(r[5], 5) || isEmptyF(r[6], 6)) noLoc++;
+    }
+    const list = [...cl].sort((a, b) => b[1].n - a[1].n);
+    const tot = rows.length;
+    let pi = 0;
+    $('clientBars').innerHTML = list.length ? list.map(([u, e]) => {
+        const col = u.includes('GRAMEEN') ? 'var(--gp)' : u.includes('ROBI') ? 'var(--robi)' : u.includes('BANGLALINK') ? 'var(--bl)' : CL_PAL[pi++ % CL_PAL.length];
+        const pct = tot ? (e.n / tot * 100) : 0;
+        return `<div class="prow"><span class="lbl">${esc(e.label)}</span><div class="pbg"><div class="pbar" style="width:${pct}%;background:${col}"></div></div><span class="cnt" title="${pct.toFixed(1)}%">${e.n}</span></div>`;
+    }).join('') : '<div class="more">No data</div>';
+    $('statNoKey').innerText = noKey;
+    $('statNoLoc').innerText = noLoc;
+    $('statKO').innerText = keyOnly.length;
+    $('statKoSub').textContent = keyOnly.length ? 'key-only: ' + keyOnly.length : '';
+}
+function goKO() { if (!keyOnly.length) return; showPage('sites'); if (!koFilter) toggleKO(); }
+
+// ---------- Dashboard: recent login + last key update (admin) ----------
+let dashLogs = [], dashLogTs = 0;
+function agoTxt(t) {
+    const m = Math.floor((Date.now() - t) / 60000);
+    if (m < 1) return 'ekhon'; if (m < 60) return m + ' min ago';
+    const h = Math.floor(m / 60); if (h < 24) return h + ' ghonta ago';
+    return Math.floor(h / 24) + ' din ago';
+}
+async function loadDashLogs(force) {
+    if (ROLE !== 'admin') return;
+    if (!force && dashLogs.length && Date.now() - dashLogTs < 60000) { renderDashLogs(); return; }
+    try {
+        const snap = await db.ref('activity_log').orderByKey().limitToLast(300).once('value');
+        const arr = []; snap.forEach(c => { arr.push(c.val()); });
+        dashLogs = arr.filter(Boolean).reverse(); dashLogTs = Date.now();
+        renderDashLogs();
+    } catch (e) {
+        const m = '<div class="more">Log load hoyni</div>';
+        if ($('dashLogin')) $('dashLogin').innerHTML = m; if ($('dashKey')) $('dashKey').innerHTML = m;
+    }
+}
+function renderDashLogs() {
+    const lg = dashLogs.filter(l => l.action === 'login' || l.action === 'login_blocked').slice(0, 8);
+    $('dashLogin').innerHTML = lg.length ? lg.map(l => {
+        const blocked = l.action === 'login_blocked';
+        const nm = (blocked ? l.site : l.name) || 'unknown';
+        return `<div class="dl"><span><b>${esc(nm)}</b> ${blocked ? '<span class="tag" style="color:var(--bad)">BLOCKED</span>' : `<span class="tag">${esc(l.role || '')}</span>`}</span><small title="${esc(fmtTs(l.ts))}">${esc(agoTxt(l.ts))}</small></div>`;
+    }).join('') : '<div class="more">Kono login history nai</div>';
+    const ku = dashLogs.filter(l => l.action === 'import_keys' || (['edit', 'add', 'merge'].includes(l.action) && /key/i.test(l.detail || ''))).slice(0, 5);
+    $('dashKey').innerHTML = ku.length ? ku.map(l =>
+        `<div class="dl c"><div><b>${esc(l.name || l.role || '-')}</b> ${l.site ? '· ' + esc(l.site) : ''}</div><small>${esc(String(l.detail || '').slice(0, 90))}</small><small>${esc(fmtTs(l.ts))}</small></div>`
+    ).join('') : '<div class="more">Kono key update history nai</div>';
 }
 
 const MAX_ROWS = 200;
@@ -881,7 +1156,7 @@ function handleFilter() {
     for (let i = 1; i < masterData.length; i++) {
         const r = masterData[i];
         if (!Array.isArray(r)) continue;
-        if (tokens.length && !match(i)) continue;
+        if (koFilter || (tokens.length && !match(i))) continue;
         if (!passFilters(r)) continue;
         total++;
         if (shown >= MAX_ROWS) continue;
@@ -899,6 +1174,27 @@ function handleFilter() {
             <td class="ac"><div class="acts"><button class="op v" onclick="viewSite(${i})"><i class="fas fa-eye"></i> VIEW</button><button class="op write-only" onclick="quickEdit(${i})"><i class="fas fa-pen"></i> EDIT</button></div></td>
         </tr>`;
     }
+    if (!Object.values(filt).some(Boolean)) {
+        const qid = tokens.length === 1 ? parseIds(tokens[0]) : [];
+        const qi = qid.length === 1 && qid[0].num.length >= 4 ? qid[0] : null;
+        for (let j = 0; j < keyOnly.length; j++) {
+            const o = keyOnly[j];
+            if (tokens.length && !(tokens.every(t => o.hay.includes(t)) ||
+                (qi && o.ids.some(m => m.num === qi.num && (!m.reg || !qi.reg || m.reg === qi.reg) && typOk(m.typ, qi.typ))))) continue;
+            total++;
+            if (shown >= MAX_ROWS) continue;
+            shown++;
+            html += `<tr class="ko-row">
+            <td class="id" data-label="SITE">${esc(o.name)}${o.names.length > 1 ? ' <small style="opacity:.6">+' + (o.names.length - 1) + '</small>' : ''}<br><span class="tag tag-ko">BTS data nai</span></td>
+            <td data-label="IP"><code class="ipc">-</code></td>
+            <td data-label="MODEL">-</td>
+            <td data-label="LOCATION"><span style="opacity:.4">N/A</span></td>
+            <td data-label="CLIENT"><span class="tag">N/A</span></td>
+            <td data-label="KEY"><span class="key-text">${esc(unesc(o.v))}</span></td>
+            <td class="ac"><div class="acts"><button class="op v" onclick="viewKO(${j})"><i class="fas fa-eye"></i> VIEW</button></div></td>
+        </tr>`;
+        }
+    }
     if (total > shown) html += `<tr><td colspan="7" class="more">Showing ${shown} of ${total} - search kore narrow korun</td></tr>`;
     if (!total) html = `<tr><td colspan="7" class="more">${masterData.length ? 'No match found' : 'No data'}</td></tr>`;
     $('fullTable').innerHTML = html;
@@ -915,14 +1211,45 @@ function viewSite(i) {
     $('viewBody').innerHTML = F.map(([k, v]) => `<div class="kv"><span>${k}</span><b>${esc(v) || '-'}</b></div>`).join('')
         + (map ? `<div class="kv"><span>Location</span><a href="${map}" target="_blank" rel="noopener"><i class="fas fa-map-marker-alt"></i> ${esc(r[5])}, ${esc(r[6])}</a></div>` : '')
         + `<div class="kv full"><span>Key information</span><pre>${esc(key)}</pre></div>`;
-    viewIdx = i;
+    viewIdx = i; viewKOIdx = -1;
+    $('viewEditBtn').innerHTML = '<i class="fas fa-pen"></i> Edit';
     $('viewModal').classList.add('open');
 }
 function closeView() { $('viewModal').classList.remove('open'); }
-function editFromView() { const i = viewIdx; closeView(); quickEdit(i); }
-function copyIP() {
-    const ip = (masterData[viewIdx] || [])[1];
-    if (ip && navigator.clipboard) navigator.clipboard.writeText(String(ip)).then(() => alert('IP copied: ' + ip));
+function editFromView() {
+    if (viewKOIdx >= 0) {   // key-only site ke master e add korar form
+        const o = keyOnly[viewKOIdx]; closeView(); toggleForm('add');
+        if (o) { $('editName').value = o.name; $('editKey').value = unesc(o.v); }
+        return;
+    }
+    const i = viewIdx; closeView(); quickEdit(i);
+}
+function viewKO(j) {
+    const o = keyOnly[j]; if (!o) return;
+    if ($('pg-sites').classList.contains('active')) saveRecent();
+    $('viewBody').innerHTML = `<div class="kv"><span>Site</span><b>${esc(o.names.join(' / '))}</b></div>`
+        + `<div class="kv"><span>Status</span><b><span class="tag tag-ko">BTS data nai</span></b></div>`
+        + `<div class="kv full"><span>Key information</span><pre>${esc(unesc(o.v))}</pre></div>`;
+    viewIdx = -1; viewKOIdx = j;
+    $('viewEditBtn').innerHTML = '<i class="fas fa-plus"></i> Add to Master';
+    $('viewModal').classList.add('open');
+}
+function copyText(txt) {
+    const ok = () => alert('✅ Copied');
+    const fb = () => { const a = document.createElement('textarea'); a.value = txt; a.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); ok(); } catch (_) { alert('Copy hoyni'); } a.remove(); };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(txt).then(ok, fb); else fb();
+}
+function copyData() {
+    if (viewKOIdx >= 0) {
+        const o = keyOnly[viewKOIdx];
+        if (o) copyText('Site: ' + o.names.join(' / ') + '\nBTS data: nai\n\nKey information:\n' + unesc(o.v));
+        return;
+    }
+    const r = masterData[viewIdx] || [], name = s8(r[0]), map = mapUrl(r);
+    const L = [['Site', name], ['IP', r[1]], ['Client', r[7]], ['Sub-Center', r[2]], ['Node', r[3]], ['Model', r[4]]].map(([k, v]) => k + ': ' + (s8(v) || '-'));
+    if (map) L.push('Location: ' + s8(r[5]) + ', ' + s8(r[6]) + ' (' + map + ')');
+    L.push('', 'Key information:', findKeyInfo(name) || 'No key info available');
+    copyText(L.join('\n'));
 }
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeView(); toggleForm('hide'); closeNav(); } });
 
@@ -987,10 +1314,10 @@ function updateMasterData() {
     }
     const idx = masterData.findIndex((r, i) => i > 0 && r && r[0]?.toString().trim().toUpperCase() === name.toUpperCase());
     const oldRow = idx !== -1 ? (masterData[idx] || []) : null;
-    const changed = oldRow ? FIELD_L.filter((_, i) => s8(oldRow[i]) !== s8(newRow[i])) : [];
+    const changed = oldRow ? FIELD_L.map((l, i) => s8(oldRow[i]) !== s8(newRow[i]) ? l + ': ' + (s8(oldRow[i]) || '-') + ' → ' + (s8(newRow[i]) || '-') : '').filter(Boolean) : [];
     if (keyText && keyText !== findKeyInfo(name, true)) changed.push('Key');
     commitRow(idx, newRow, keyText, name, oldRow ? 'edit' : 'add', name,
-        oldRow ? (changed.join(', ') || 'no change') : (keyText ? 'with key' : ''));
+        oldRow ? (changed.join(' | ').slice(0, 580) || 'no change') : ([s8(newRow[1]), s8(newRow[7]), keyText ? 'with key' : ''].filter(Boolean).join(' · ')));
 }
 
 function commitRow(idx, newRow, keyText, keyName, act, site, detail) {
@@ -1053,6 +1380,7 @@ function passFilters(r) {
     return true;
 }
 function buildFilters() {
+    ensureIndexes(); if (!keyOnly.length) koFilter = false;
     const opts = {};
     for (const k in FCOL) {
         const m = new Map();
@@ -1064,7 +1392,7 @@ function buildFilters() {
         }
         opts[k] = [...m].sort((x, y) => x[1].localeCompare(y[1]));
     }
-    const sig = JSON.stringify(opts);
+    const sig = JSON.stringify(opts) + '|' + keyOnly.length + '|' + koFilter;
     if (sig === filtSig) return;
     filtSig = sig;
     for (const k in filt) if (filt[k] && !opts[k].some(([u]) => u === filt[k])) filt[k] = '';
@@ -1072,15 +1400,18 @@ function buildFilters() {
         `<select class="inp fsel" data-k="${k}" onchange="onFilter(this)"><option value="">${FLAB[k]}</option>` +
         opts[k].map(([u, v]) => `<option value="${esc(u)}"${filt[k] === u ? ' selected' : ''}>${esc(v)}</option>`).join('') + '</select>'
     ).join('') + '<button class="btn" onclick="clearFilters()"><i class="fas fa-filter-circle-xmark"></i> Clear filters</button>';
-    $('filtersSites').innerHTML = html; $('filtersMap').innerHTML = html;
+    $('filtersSites').innerHTML = html + (keyOnly.length ? `<button class="btn${koFilter ? ' btn-p' : ''}" onclick="toggleKO()"><i class="fas fa-link-slash"></i> Key-only (${keyOnly.length})</button>` : '');
+    $('filtersMap').innerHTML = html;
 }
 function onFilter(el) {
     filt[el.dataset.k] = el.value;
     document.querySelectorAll('.fsel[data-k="' + el.dataset.k + '"]').forEach(x => x.value = el.value);
     handleFilter(); if (mapOpen()) renderMap(true);
 }
+function toggleKO() { koFilter = !koFilter; filtSig = ''; buildFilters(); handleFilter(); }
 function clearFilters() {
     for (const k in filt) filt[k] = '';
+    koFilter = false; filtSig = ''; buildFilters();
     document.querySelectorAll('.fsel').forEach(x => x.value = '');
     handleFilter(); if (mapOpen()) renderMap(true);
 }
@@ -1284,16 +1615,9 @@ async function pushToTelegram() {
     const st = $('pushStatus');
     st.textContent = 'Pushing...';
     try {
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(masterData), 'MasterData');
-        const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
         const tok = await auth.currentUser.getIdToken();
-        const r = await api('/admin/push?sites=' + (masterData.length - 1), {
-            method: 'POST',
-            headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/octet-stream' },
-            body: new Blob([buf])
-        });
-        st.textContent = r.ok ? '✅ Push success' : '❌ Push failed';
+        const r = await api('/admin/push', { method: 'POST', headers: { Authorization: 'Bearer ' + tok } });
+        st.textContent = r.ok ? '✅ Master + Keys Telegram e gese' : '❌ Push failed';
     } catch (e) { st.textContent = '❌ Push error'; }
     setTimeout(() => st.textContent = '', 3000);
 }
