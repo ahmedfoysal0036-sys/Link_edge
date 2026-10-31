@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Phoenix Controller</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="theme-color" content="#0c1016">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Phoenix">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="icon" type="image/jpeg" href="./bts-logo.jpg">
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
@@ -22,7 +29,7 @@
 html,body{height:100%}
 body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:14px;-webkit-text-size-adjust:100%}
 button{font:inherit;cursor:pointer;border:0;color:inherit;background:none}
-input,textarea{font:inherit;color:var(--text)}
+input,textarea,select{font:inherit;color:var(--text)}
 .mono,code{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace}
 /* login */
 #loginGate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(900px 500px at 20% 0,var(--primary-s),transparent),var(--bg);z-index:100}
@@ -119,7 +126,8 @@ textarea.inp{grid-column:1/-1;min-height:110px;resize:vertical}
  .key-text{max-width:none}
  .bar{flex-wrap:wrap}.bar .btn{width:100%}
 }
-body[data-role=user] .admin-only{display:none!important}
+body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-role=offline] .write-only{display:none!important}
+#offHint{display:none;color:var(--muted);font-size:12px;margin-top:12px;line-height:1.5}
 .toast{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:120;display:none;align-items:center;gap:12px;background:var(--card);border:1px solid var(--bad);border-radius:12px;padding:10px 14px;box-shadow:0 10px 30px rgba(0,0,0,.35);max-width:calc(100vw - 24px)}
 .pf{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
 .pmsg{font-size:13px;min-height:18px;margin-top:8px}
@@ -146,6 +154,7 @@ body[data-role=user] .admin-only{display:none!important}
   <input type="password" id="pinIn" class="pin" inputmode="numeric" autocomplete="current-password" placeholder="••••••" onkeydown="if(event.key==='Enter')verifyAccess()">
   <button id="authBtn" class="btn btn-p" onclick="verifyAccess()">Unlock</button>
   <div id="authError"></div>
+  <div id="offHint">📴 Offline: last save kora data diye view-only mode e dhukte parben (age ekbar online login kora thakte hobe).</div>
  </div>
 </div>
 
@@ -156,7 +165,7 @@ body[data-role=user] .admin-only{display:none!important}
   <nav class="nav">
    <button data-p="dash" onclick="showPage('dash')" class="active"><i class="fas fa-gauge-high"></i>Dashboard</button>
    <button data-p="sites" onclick="showPage('sites')"><i class="fas fa-tower-cell"></i>Sites</button>
-   <button data-p="map" onclick="showPage('map')"><i class="fas fa-map-location-dot"></i>Map</button>
+   <button class="write-only" data-p="map" onclick="showPage('map')"><i class="fas fa-map-location-dot"></i>Map</button>
    <button class="admin-only" data-p="data" onclick="showPage('data')"><i class="fas fa-database"></i>Data Tools</button>
    <button data-p="set" onclick="showPage('set')"><i class="fas fa-gear"></i>Settings</button>
   </nav>
@@ -187,7 +196,7 @@ body[data-role=user] .admin-only{display:none!important}
    <section class="page" id="pg-sites">
     <div class="bar">
      <div class="sw"><i class="fas fa-search"></i><input type="text" id="searchInput" class="inp" placeholder="Search site code, IP, node..." oninput="debounceFilter();recentShow()" onfocus="recentShow()" onblur="recentBlur()" onchange="saveRecent()" onkeydown="if(event.key==='Enter'){saveRecent();this.blur()}" autocomplete="off"></div>
-     <button onclick="toggleForm('add')" class="btn btn-p"><i class="fas fa-plus"></i> New Entry</button>
+     <button onclick="toggleForm('add')" class="btn btn-p write-only"><i class="fas fa-plus"></i> New Entry</button>
     </div>
     <div class="chips" id="recentBox"></div>
     <div class="filters" id="filtersSites"></div>
@@ -239,6 +248,7 @@ body[data-role=user] .admin-only{display:none!important}
     <div class="card" style="margin-bottom:14px">
      <div class="sec-t">Session</div><div class="sec-s">Browser bondho korle auto logout hoy</div>
      <button class="btn btn-d" onclick="logout()"><i class="fas fa-right-from-bracket"></i> Logout</button>
+     <button class="btn" onclick="clearOffline()" style="margin-left:8px"><i class="fas fa-eraser"></i> Offline data muchhe felo</button>
     </div>
     <div class="card" style="margin-bottom:14px">
      <div class="sec-t">Auto logout</div><div class="sec-s">Kichukkhon kichu na korle nije logout hobe (ei device e save thake)</div>
@@ -247,35 +257,37 @@ body[data-role=user] .admin-only{display:none!important}
      </select>
     </div>
     <div class="card admin-only" style="margin-bottom:14px">
-     <div class="sec-t">Change PIN</div><div class="sec-s">PIN 6 digit number hote hobe. Admin PIN bhule gele Render er MASTER_PIN diye dhukte parben.</div>
-     <div class="sec-s" style="margin-bottom:8px"><b>Admin PIN</b></div>
+     <div class="sec-t">Manage Users & PINs</div>
+     <div class="sec-s">Proti user-er jonno alada 6-digit PIN set korun.</div>
      <div class="pf">
-      <input type="password" id="admCur" class="inp" inputmode="numeric" maxlength="6" autocomplete="new-password" placeholder="Current Admin PIN">
-      <input type="password" id="admNew" class="inp" inputmode="numeric" maxlength="6" autocomplete="new-password" placeholder="New PIN (6 digit)">
-      <input type="password" id="admNew2" class="inp" inputmode="numeric" maxlength="6" autocomplete="new-password" placeholder="Confirm new PIN">
+      <input type="text" id="newUserName" class="inp" placeholder="User Name / ID" autocomplete="off">
+      <input type="password" id="newUserPin" class="inp" inputmode="numeric" maxlength="6" placeholder="6-digit PIN">
+      <select id="newUserRole" class="inp">
+       <option value="user">User (Viewer/Editor)</option>
+       <option value="admin">Admin</option>
+      </select>
      </div>
-     <button class="btn btn-p" onclick="changePin('admin')">Change Admin PIN</button>
-     <div id="admMsg" class="pmsg"></div>
-     <div class="sec-s" style="margin:14px 0 8px"><b>User PIN</b> (notun set ba change)</div>
-     <div class="pf">
-      <input type="password" id="usrCur" class="inp" inputmode="numeric" maxlength="6" autocomplete="new-password" placeholder="Your Admin PIN">
-      <input type="password" id="usrNew" class="inp" inputmode="numeric" maxlength="6" autocomplete="new-password" placeholder="New User PIN (6 digit)">
-      <input type="password" id="usrNew2" class="inp" inputmode="numeric" maxlength="6" autocomplete="new-password" placeholder="Confirm User PIN">
-     </div>
-     <button class="btn btn-p" onclick="changePin('user')">Set User PIN</button>
-     <div id="usrMsg" class="pmsg"></div>
+     <input type="password" id="adminAuthPin" class="inp" inputmode="numeric" maxlength="6" placeholder="Your Admin PIN to confirm" style="margin-bottom:10px">
+     <button class="btn btn-p" onclick="addNewUser()">Add / Update User</button>
+     <div id="userMgmtMsg" class="pmsg"></div>
     </div>
     <div class="card admin-only" style="margin-bottom:14px">
      <div class="sec-t">Activity log</div><div class="sec-s">Latest 100 ta record</div>
      <div class="bar" style="flex-wrap:wrap">
       <input type="text" id="logSearch" class="inp" placeholder="Search site / detail" oninput="renderLogs()" style="flex:1;min-width:160px">
       <select id="logAction" class="inp" onchange="renderLogs()" style="width:auto"></select>
-      <select id="logRole" class="inp" onchange="renderLogs()" style="width:auto"><option value="">All roles</option><option value="admin">admin</option><option value="user">user</option><option value="none">none</option></select>
+      <select id="logRole" class="inp" onchange="renderLogs()" style="width:auto"><option value="">All roles</option><option value="admin">admin</option><option value="user">user</option><option value="none">none</option><option value="system">system</option></select>
       <button class="btn" onclick="loadLogs()"><i class="fas fa-rotate"></i> Refresh</button>
      </div>
      <div id="logList"></div>
     </div>
-    <div class="card about"><b>PHOENIX V4.1</b><br><span class="status"><i class="fas fa-circle" style="font-size:6px;color:var(--ok)"></i> System Operational</span></div>
+    <div class="card admin-only" style="margin-bottom:14px">
+     <div class="sec-t">Auto backup (Telegram)</div><div class="sec-s">Dhaka somoy raat 2 tay Master + Keys Excel Telegram e pathabe</div>
+     <select id="bkFreq" class="inp" style="max-width:220px" onchange="bkSave()"><option value="off">Off</option><option value="daily">Daily</option><option value="weekly">Weekly (Sunday)</option></select>
+     <div id="bkInfo" class="sec-s" style="margin:10px 0"></div>
+     <button class="btn" onclick="bkNow()"><i class="fas fa-cloud-arrow-up"></i> Backup now</button>
+    </div>
+    <div class="card about"><b>PHOENIX V4.2</b><br><span class="status"><i class="fas fa-circle" style="font-size:6px;color:var(--ok)"></i> System Operational</span></div>
    </section>
   </div>
  </main>
@@ -292,7 +304,7 @@ body[data-role=user] .admin-only{display:none!important}
 
 <div class="modal" id="viewModal" onclick="if(event.target===this)closeView()">
  <div class="sheet"><h3>Site Details</h3><div id="viewBody"></div>
-  <div class="mf"><button class="btn btn-p" onclick="editFromView()"><i class="fas fa-pen"></i> Edit</button><button class="btn" onclick="copyIP()"><i class="fas fa-copy"></i> Copy IP</button><button class="btn" onclick="closeView()">Close</button></div>
+  <div class="mf"><button class="btn btn-p write-only" onclick="editFromView()"><i class="fas fa-pen"></i> Edit</button><button class="btn" onclick="copyIP()"><i class="fas fa-copy"></i> Copy IP</button><button class="btn" onclick="closeView()">Close</button></div>
  </div>
 </div>
 
@@ -338,6 +350,7 @@ let ROLE = '';
 let editOrigName = '';
 let logCache = [];
 let masterIsArr = true;
+let OFFLINE = false;
 
         function safeKey(s) {
             return String(s || '')
@@ -450,14 +463,23 @@ async function verifyAccess() {
     const pin = $('pinIn').value.trim();
     if (!pin) return;
     const err = $('authError'), btn = $('authBtn');
+    if (!navigator.onLine) {   // internet nai -> local saved data (PIN diye unlock)
+        if (await offlineUnlock(pin)) $('pinIn').value = ''; else loginNote('Wrong PIN, ba offline data nai');
+        return;
+    }
     btn.disabled = true; btn.textContent = 'Connecting...';
     try {
         const r = await api('/auth/pin', { method: 'POST', headers: JSON_H, body: JSON.stringify({ pin }) });
         const j = await r.json().catch(() => ({}));
         if (!r.ok || !j.token) throw new Error(r.status === 429 ? 'Too many attempts. Try again later.' : r.status === 401 ? 'Wrong PIN' : 'Server error');
         await auth.signInWithCustomToken(j.token);
+        await prepSnap(pin, j.role).catch(() => {});
         $('pinIn').value = '';
     } catch (e) {
+        if ((e instanceof TypeError || e.name === 'AbortError') && await hasSnap() && confirm('Server pawa jachchhe na. Offline (view-only) mode e dhukben?')) {
+            if (await offlineUnlock(pin)) { $('pinIn').value = ''; return; }
+            loginNote('Wrong PIN'); return;
+        }
         err.textContent = e.name === 'AbortError' ? 'Server timeout. Try again.' : (e.message || 'Failed');
         err.style.display = 'block';
         setTimeout(() => err.style.display = 'none', 3500);
@@ -471,19 +493,19 @@ async function askPin(label) {
     try {
         const r = await api('/auth/pin', { method: 'POST', headers: JSON_H, body: JSON.stringify({ pin: pin.trim(), check: true }) });
         if (r.ok) { const j = await r.json().catch(() => ({})); if (j.role === 'admin') return true; alert('Admin PIN lagbe.'); return false; }
-        alert(r.status === 429 ? 'Too many attempts. Try later.' : 'Invalid PIN.');
+        alert(r.status === 429 ? 'Too many attempts. Pore try later.' : 'Invalid PIN.');
     } catch (e) { alert('Server not reachable.'); }
     return false;
 }
 
 async function logout() {
-    if (confirm('Are you sure you want to logout?')) { await Promise.race([logAct('logout'), new Promise(r => setTimeout(r, 2000))]); auth.signOut(); }
+    if (confirm('Are you sure you want to logout?')) { if (OFFLINE) { exitOffline(); return; } await Promise.race([logAct('logout'), new Promise(r => setTimeout(r, 2000))]); auth.signOut(); }
 }
 
 function startListeners() {
-    db.ref('professor_master_db').on('value', (s) => { masterData = toArray(s.val()); masterIsArr = Array.isArray(s.val()); refreshUI_Internal(); },
+    db.ref('professor_master_db').on('value', (s) => { masterData = toArray(s.val()); masterIsArr = Array.isArray(s.val()); refreshUI_Internal(); snapSoon(); },
         (e) => alert('❌ Firebase read error (master): ' + e.message));
-    db.ref('professor_keys_db').on('value', (s) => { keysData = s.val() || {}; refreshUI_Internal(); },
+    db.ref('professor_keys_db').on('value', (s) => { keysData = s.val() || {}; refreshUI_Internal(); snapSoon(); },
         (e) => alert('❌ Firebase read error (keys): ' + e.message));
 }
 
@@ -492,7 +514,7 @@ auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {}).then
         if (!(await applyRole(u))) return;
         $('loginGate').style.display = u ? 'none' : 'flex';
         $('app').style.display = u ? 'flex' : 'none';
-        if (u) startIdle(); else { stopIdle(); logCache = []; $('logList').innerHTML = ''; }
+        if (u) startIdle(); else { stopIdle(); logCache = []; $('logList').innerHTML = ''; snapKey = null; }
         if (u && !listening) { listening = true; startListeners(); showPage('dash'); }
         if (!u && listening) {
             db.ref('professor_master_db').off(); db.ref('professor_keys_db').off();
@@ -504,14 +526,19 @@ auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {}).then
 // ---------- Role / activity log ----------
 async function applyRole(u) {
     ROLE = '';
+    let uname = '';
     if (u) {
-        try { ROLE = (await u.getIdTokenResult()).claims.role || ''; } catch (_) {}
-        if (ROLE !== 'admin' && ROLE !== 'user') {   // purono login (role nai) -> abar login
+        try { 
+            const claims = await u.getIdTokenResult();
+            ROLE = claims.claims.role || ''; 
+            uname = claims.claims.name || '';
+        } catch (_) {}
+        if (ROLE !== 'admin' && ROLE !== 'user') {   
             ROLE = ''; auth.signOut(); loginNote('Notun version e abar login korun'); return false;
         }
     }
     document.body.dataset.role = ROLE;
-    $('roleTag').textContent = ROLE.toUpperCase();
+    $('roleTag').textContent = (uname ? uname + ' (' : '') + ROLE.toUpperCase() + (uname ? ')' : '');
     return true;
 }
 function loginNote(t) {
@@ -540,12 +567,13 @@ function hideWarn() { $('idleToast').style.display = 'none'; warnShown = false; 
 function startIdle() { lastActive = Date.now(); clearInterval(idleTimer); idleTimer = setInterval(idleTick, 1000); }
 function stopIdle() { clearInterval(idleTimer); idleTimer = null; hideWarn(); }
 async function idleTick() {
-    if (!auth.currentUser) return;
+    if (!auth.currentUser && !OFFLINE) return;
     const left = idleMinutes() * 60 - (Date.now() - lastActive) / 1000;
     if (left <= 0) {
         stopIdle();
         await Promise.race([logAct('auto_logout'), new Promise(r => setTimeout(r, 2000))]);
-        auth.signOut(); loginNote('Idle thakar karone auto logout hoyeche');
+        if (OFFLINE) exitOffline(); else auth.signOut();
+        loginNote('Idle thakar karone auto logout hoyeche');
         return;
     }
     if (left <= WARN_SEC) showWarn(Math.ceil(left)); else if (warnShown) hideWarn();
@@ -555,9 +583,10 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) idle
 // ---------- Settings: idle, PIN, log ----------
 const LOG_LABEL = { login: 'Login', login_failed: 'Login failed', logout: 'Logout', auto_logout: 'Auto logout', add: 'Add', edit: 'Edit', merge: 'Merge', delete: 'Delete',
     import_master: 'Import data', import_keys: 'Import keys', wipe_master: 'Wipe data', wipe_keys: 'Wipe keys', export_master: 'Export data',
-    export_keys: 'Export keys', push: 'Push Telegram', pin_change: 'PIN change' };
+    export_keys: 'Export keys', push: 'Push Telegram', pin_change: 'PIN change', backup: 'Auto backup', backup_now: 'Backup now', backup_config: 'Backup setting', user_add: 'User Add', user_delete: 'User Delete' };
 function initSettings() {
     $('idleSel').value = String(idleMinutes());
+    if (ROLE === 'admin') bkLoad();
     if (ROLE === 'admin') {
         if ($('logAction').options.length < 2)
             $('logAction').innerHTML = '<option value="">All actions</option>' + Object.keys(LOG_LABEL).map(k => `<option value="${k}">${LOG_LABEL[k]}</option>`).join('');
@@ -566,28 +595,43 @@ function initSettings() {
 }
 function saveIdle() { try { localStorage.setItem('phoenix_idle_min', $('idleSel').value); } catch (_) {} bump(); }
 
-async function changePin(target) {
-    const p = target === 'admin' ? 'adm' : 'usr';
-    const cur = $(p + 'Cur').value.trim(), n1 = $(p + 'New').value.trim(), n2 = $(p + 'New2').value.trim();
-    const st = $(p + 'Msg');
-    const say = (t, ok) => { st.textContent = t; st.style.color = ok ? 'var(--ok)' : 'var(--bad)'; };
-    if (ROLE !== 'admin') return;
-    if (!cur) return say('Current Admin PIN din', false);
-    if (!/^\d{6}$/.test(n1)) return say('New PIN 6 digit number hote hobe', false);
-    if (n1 !== n2) return say('Confirm PIN mile nai', false);
-    say('Saving...', true);
+async function addNewUser() {
+    const username = $('newUserName').value.trim();
+    const newPin = $('newUserPin').value.trim();
+    const role = $('newUserRole').value;
+    const currentAdminPin = $('adminAuthPin').value.trim();
+    const st = $('userMgmtMsg');
+
+    if (!username || !/^\d{6}$/.test(newPin)) {
+        st.textContent = 'Sothik Username ebong 6-digit PIN din'; st.style.color = 'var(--bad)';
+        return;
+    }
+    if (!currentAdminPin) {
+        st.textContent = 'Confirmation er jonno apnar Admin PIN din'; st.style.color = 'var(--bad)';
+        return;
+    }
+
+    st.textContent = 'Saving...'; st.style.color = 'var(--text)';
     try {
         const tok = await auth.currentUser.getIdToken();
-        const r = await api('/admin/change-pin', {
-            method: 'POST', headers: { ...JSON_H, Authorization: 'Bearer ' + tok },
-            body: JSON.stringify({ target, currentPin: cur, newPin: n1 })
+        const r = await api('/admin/users', {
+            method: 'POST',
+            headers: { ...JSON_H, Authorization: 'Bearer ' + tok },
+            body: JSON.stringify({ action: 'add', username, newPin, role, currentAdminPin })
         });
         const j = await r.json().catch(() => ({}));
-        if (!r.ok) return say(r.status === 429 ? 'Too many attempts. Pore try korun.' : (j.error || 'Failed'), false);
-        ['Cur', 'New', 'New2'].forEach(x => $(p + x).value = '');
-        say('✅ ' + (target === 'admin' ? 'Admin' : 'User') + ' PIN update hoyeche', true);
+        if (!r.ok) throw new Error(j.error || 'Failed');
+        
+        $('newUserName').value = '';
+        $('newUserPin').value = '';
+        $('adminAuthPin').value = '';
+        st.textContent = '✅ User successfully added/updated!';
+        st.style.color = 'var(--ok)';
         loadLogs();
-    } catch (e) { say('Server not reachable', false); }
+    } catch (e) {
+        st.textContent = '❌ ' + e.message;
+        st.style.color = 'var(--bad)';
+    }
 }
 
 const fmtTs = (t) => t ? new Date(t).toLocaleString('en-GB', { timeZone: 'Asia/Dhaka', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }) : '-';
@@ -611,6 +655,7 @@ function renderLogs() {
 }
 
 function deleteSite() {
+    if (OFFLINE || !navigator.onLine) { alert('Offline: delete bondho.'); return; }
     if (ROLE !== 'admin' || !editOrigName) return;
     const name = editOrigName;
     if (!confirm('"' + name + '" site ta delete korben? (Key info thakbe, shudhu site row muche jabe)')) return;
@@ -628,6 +673,7 @@ function deleteSite() {
 const TITLES = { dash: 'Dashboard', sites: 'Sites', map: 'Map', data: 'Data Tools', set: 'Settings' };
 function showPage(p) {
     if (p === 'data' && ROLE !== 'admin') p = 'dash';
+    if (p === 'map' && OFFLINE) p = 'dash';
     document.querySelectorAll('.page').forEach(e => e.classList.toggle('active', e.id === 'pg-' + p));
     document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('active', b.dataset.p === p));
     $('pageTitle').textContent = TITLES[p];
@@ -839,7 +885,7 @@ function handleFilter() {
             <td data-label="LOCATION">${map ? `<a href="${map}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700"><i class="fas fa-map-marker-alt"></i> MAP</a>` : '<span style="opacity:.4">N/A</span>'}</td>
             <td data-label="CLIENT"><span class="tag ${getClientClass(r[7])}">${esc(r[7]) || 'N/A'}</span></td>
             <td data-label="KEY"><span class="key-text">${esc(key)}</span></td>
-            <td class="ac"><div class="acts"><button class="op v" onclick="viewSite(${i})"><i class="fas fa-eye"></i> VIEW</button><button class="op" onclick="quickEdit(${i})"><i class="fas fa-pen"></i> EDIT</button></div></td>
+            <td class="ac"><div class="acts"><button class="op v" onclick="viewSite(${i})"><i class="fas fa-eye"></i> VIEW</button><button class="op write-only" onclick="quickEdit(${i})"><i class="fas fa-pen"></i> EDIT</button></div></td>
         </tr>`;
     }
     if (total > shown) html += `<tr><td colspan="7" class="more">Showing ${shown} of ${total} - search kore narrow korun</td></tr>`;
@@ -871,6 +917,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeVie
 
 // ---------- Add / Edit ----------
 function toggleForm(mode) {
+    if (OFFLINE && mode !== 'hide') { alert('Offline mode e edit/add bondho'); return; }
     const s = $('editSection');
     if (mode === 'hide') { s.classList.remove('open'); return; }
     s.classList.add('open');
@@ -904,7 +951,6 @@ const s8 = (v) => String(v ?? '').trim();
 const isEmptyF = (v, i) => { v = s8(v); return v === '' || ((i === 5 || i === 6) && (v === '0' || v === '0.0')); };
 let pendingDup = null;
 
-// same site: pura naam same, ba region+number same (DHK2952 = DHK_Y2952)
 function findDup(name) {
     ensureIndexes();
     const u = name.toUpperCase(), ids = parseIds(name);
@@ -924,7 +970,7 @@ function updateMasterData() {
         $('editModel').value, $('editLat').value, $('editLong').value, $('editClient').value];
     const keyText = $('editKey').value.trim();
 
-    if (!editOrigName) {   // New Entry: duplicate check
+    if (!editOrigName) {   
         const d = findDup(name);
         if (d !== -1) { showDup(d, newRow, keyText); return; }
     }
@@ -937,14 +983,15 @@ function updateMasterData() {
 }
 
 function commitRow(idx, newRow, keyText, keyName, act, site, detail) {
+    if (OFFLINE || !navigator.onLine) { alert('Offline: edit/add bondho. Internet ashle abar try korun.'); return; }
     const newMaster = masterData.length ? [...masterData] : [HEAD8.slice()];
     if (idx !== -1) newMaster[idx] = newRow; else newMaster.push(newRow);
     let ops;
-    if (masterIsArr && masterData.length) ops = [db.ref('professor_master_db/' + (idx !== -1 ? idx : masterData.length)).set(newRow)];   // shudhu ei row
+    if (masterIsArr && masterData.length) ops = [db.ref('professor_master_db/' + (idx !== -1 ? idx : masterData.length)).set(newRow)];   
     else if (ROLE === 'admin') ops = [db.ref('professor_master_db').set(newMaster)];
     else { alert('Ekhon save kora jachchhe na, Admin ke jananu.'); return; }
     const sk = safeKey(keyName);
-    if (keyText) ops.push(db.ref('professor_keys_db/' + sk).set(keyText));   // shudhu ei site er key
+    if (keyText) ops.push(db.ref('professor_keys_db/' + sk).set(keyText));   
     Promise.all(ops).then(() => {
         masterData = newMaster;
         if (keyText) keysData = { ...keysData, [sk]: keyText };
@@ -1088,6 +1135,109 @@ function renderMap(fit) {
     if (fit && mk.length) map.fitBounds(cluster.getBounds(), { padding: [30, 30], maxZoom: 15 });
 }
 
+// ---------- Auto backup settings (server e kaj hoy) ----------
+async function bkCall(path, body) {
+    const tok = await auth.currentUser.getIdToken();
+    const r = await api(path, { method: 'POST', headers: { ...JSON_H, Authorization: 'Bearer ' + tok }, body: JSON.stringify(body || {}) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'Failed');
+    return j;
+}
+function bkShow(j) {
+    $('bkFreq').value = j.freq || 'off';
+    $('bkInfo').textContent = 'Last backup: ' + (j.lastBackupAt ? fmtTs(j.lastBackupAt) : 'none') + (j.lastStatus ? ' · ' + j.lastStatus : '');
+}
+async function bkLoad() { try { bkShow(await bkCall('/admin/backup-config')); } catch (e) { $('bkInfo').textContent = 'Status load hoyni'; } }
+async function bkSave() { try { bkShow(await bkCall('/admin/backup-config', { freq: $('bkFreq').value })); } catch (e) { alert('❌ ' + e.message); bkLoad(); } }
+async function bkNow() {
+    $('bkInfo').textContent = 'Pathacchi...';
+    try { await bkCall('/admin/backup-now'); await bkLoad(); alert('✅ Backup Telegram e gese'); }
+    catch (e) { $('bkInfo').textContent = ''; alert('❌ ' + e.message); }
+}
+
+// ---------- Offline mode: last data PIN-encrypted kore IndexedDB e ----------
+function idbOpen() {
+    return new Promise((ok, no) => {
+        const q = indexedDB.open('phoenix', 1);
+        q.onupgradeneeded = () => q.result.createObjectStore('kv');
+        q.onsuccess = () => ok(q.result); q.onerror = () => no(q.error);
+    });
+}
+async function idbGet(k) {
+    const d = await idbOpen();
+    return new Promise((ok, no) => { const r = d.transaction('kv').objectStore('kv').get(k); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+}
+async function idbSet(k, v) {
+    const d = await idbOpen();
+    return new Promise((ok, no) => { const t = d.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = () => ok(); t.onerror = () => no(t.error); });
+}
+async function idbDel(k) {
+    const d = await idbOpen();
+    return new Promise((ok, no) => { const t = d.transaction('kv', 'readwrite'); t.objectStore('kv').delete(k); t.oncomplete = () => ok(); t.onerror = () => no(t.error); });
+}
+async function hasSnap() { try { return !!((await idbGet('snap_admin')) || (await idbGet('snap_user'))); } catch (_) { return false; } }
+
+let snapKey = null, snapRole = '', snapSalt = null, snapTimer = null;
+async function deriveKey(pin, salt) {
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 150000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function prepSnap(pin, role) {
+    if (!window.crypto || !crypto.subtle || (role !== 'admin' && role !== 'user')) return;
+    const rec = await idbGet('snap_' + role).catch(() => null);
+    snapSalt = (rec && rec.salt) || crypto.getRandomValues(new Uint8Array(16));
+    snapKey = await deriveKey(pin, snapSalt); snapRole = role;
+}
+function snapSoon() { clearTimeout(snapTimer); snapTimer = setTimeout(saveSnap, 3000); }
+async function saveSnap() {
+    if (!snapKey || !masterData.length) return;
+    try {
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, snapKey,
+            new TextEncoder().encode(JSON.stringify({ master: masterData, keys: keysData, ts: Date.now() })));
+        await idbSet('snap_' + snapRole, { salt: snapSalt, iv, data });
+    } catch (e) { console.warn('Snapshot save failed', e); }
+}
+async function offlineUnlock(pin) {
+    for (const role of ['admin', 'user']) {
+        try {
+            const rec = await idbGet('snap_' + role);
+            if (!rec) continue;
+            const buf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: rec.iv }, await deriveKey(pin, rec.salt), rec.data);
+            enterOffline(JSON.parse(new TextDecoder().decode(buf)));
+            return true;
+        } catch (_) {}   
+    }
+    return false;
+}
+function enterOffline(o) {
+    OFFLINE = true; ROLE = 'offline';
+    document.body.dataset.role = 'offline';
+    $('roleTag').textContent = 'OFFLINE';
+    masterData = Array.isArray(o.master) ? o.master : []; keysData = o.keys || {}; masterIsArr = false;
+    $('loginGate').style.display = 'none'; $('app').style.display = 'flex';
+    startIdle(); showPage('dash'); refreshUI_Internal();
+    $('statTime').innerText = new Date(o.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+function exitOffline() {
+    OFFLINE = false; ROLE = ''; stopIdle();
+    masterData = []; keysData = {};
+    document.body.dataset.role = ''; $('roleTag').textContent = '';
+    $('fullTable').innerHTML = '';
+    $('app').style.display = 'none'; $('loginGate').style.display = 'flex';
+}
+async function clearOffline() {
+    if (!confirm('Ei device e save kora offline data muche felben? (Pore online login korle abar save hobe)')) return;
+    try { await idbDel('snap_admin'); await idbDel('snap_user'); alert('✅ Offline data muche gese'); } catch (e) { alert('❌ ' + e.message); }
+}
+function netHint() { $('offHint').style.display = navigator.onLine ? 'none' : 'block'; }
+window.addEventListener('offline', netHint);
+window.addEventListener('online', () => { netHint(); if (OFFLINE) { exitOffline(); loginNote('Online ashe gese, abar login korun'); } });
+netHint();
+
+// ---------- PWA ----------
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+
 // ---------- Wipe / Export / Push ----------
 async function wipeData() {
     if (!(await askPin('wipe Master Data'))) return;
@@ -1118,7 +1268,6 @@ async function exportKeys() {
     XLSX.writeFile(wb, 'Phoenix_Keys_Backup.xlsx');
 }
 
-// Telegram token ar browser e nei: file server e jay, server bot diye pathay
 async function pushToTelegram() {
     if (ROLE !== 'admin' || !masterData.length) return;
     const st = $('pushStatus');

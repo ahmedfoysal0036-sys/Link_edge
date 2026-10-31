@@ -56,7 +56,7 @@ if (!/^\d{6,}:[A-Za-z0-9_-]{30,}$/.test(BOT_TOKEN)) {
 console.log("🔑 BOT_TOKEN loaded (id: " + BOT_TOKEN.split(':')[0] + ")");
 
 const bot = new Telegraf(BOT_TOKEN);
-const BOT_VERSION = 'v3.9-roles';
+const BOT_VERSION = 'v4.0-notify-backup';
 console.log("🤖 Phoenix Bot version: " + BOT_VERSION);
 
 // =====================================================================
@@ -82,7 +82,6 @@ const valueToString = (val) => {
     return val ? val.toString().trim() : '';
 };
 
-// Firebase kokhono kokhono sparse row ke array er bodole object banay -> array e ferot
 function normRow(r) {
     if (Array.isArray(r)) return r;
     if (r && typeof r === 'object') {
@@ -96,10 +95,9 @@ function normRow(r) {
     return null;
 }
 
-// ---- ID matching: DHK2952 == DHK_Y2952 == X2952 (region + number, type letter optional) ----
-const R_TYPED  = /(^|[^A-Z0-9])([A-Z]{2,6})[_ -]([A-Z])(\d{2,5})(?!\d)/g;   // DHK_Y2952
-const R_REGION = /(^|[^A-Z0-9])([A-Z]{2,6})(\d{2,5})(?!\d)/g;                // DHK2952, DHLLB13
-const R_BARE   = /(^|[^A-Z0-9])([A-Z])(\d{3,5})(?!\d)/g;                     // X2952
+const R_TYPED  = /(^|[^A-Z0-9])([A-Z]{2,6})[_ -]([A-Z])(\d{2,5})(?!\d)/g;   
+const R_REGION = /(^|[^A-Z0-9])([A-Z]{2,6})(\d{2,5})(?!\d)/g;                
+const R_BARE   = /(^|[^A-Z0-9])([A-Z])(\d{3,5})(?!\d)/g;                     
 const SEP = '\n— — —\n';
 
 function parseIds(text) {
@@ -111,10 +109,9 @@ function parseIds(text) {
     return ids;
 }
 const idCode = (id) => id.reg + (id.typ ? (id.reg ? '_' : '') + id.typ : '') + id.num;
-const typOk = (a, b) => !a || !b || a === b;   // type letter dutoi thakle same hote hobe (X != Y)
+const typOk = (a, b) => !a || !b || a === b;   
 const addTo = (m, k, e) => { if (!m.has(k)) m.set(k, []); m.get(k).push(e); };
 
-// Key DB -> 3 ta index: full text, region+number, number-only (>=4 digit)
 function buildKeyIndex(keysObj) {
     const idx = { full: new Map(), core: new Map(), num: new Map() };
     for (const k of Object.keys(keysObj || {})) {
@@ -130,12 +127,9 @@ function buildKeyIndex(keysObj) {
     return idx;
 }
 
-// 1) precise: same region + number (type letter ignore) ba pura naam same
-// 2) na pele: master e region nai (X2952) -> number mile gele "≈" chinho diye dekhai
 function lookupKeys(siteName, idx) {
     const precise = new Set(), weak = new Map();
     (idx.full.get(safeKey(siteName)) || []).forEach(e => precise.add(e.v));
-    // letters-only code (DHJKTL): SGDHHBG003_DHJKTL / DHHAZ039HTR01_DHJKTL -> token DHJKTL ke key naam er sathe exact milai
     for (const tok of safeKey(siteName).split(/[^A-Z0-9]+/)) {
         if (tok.length >= 5) (idx.full.get(tok) || []).forEach(e => precise.add(e.v));
     }
@@ -150,7 +144,6 @@ function lookupKeys(siteName, idx) {
     return null;
 }
 
-// Search hobe shudhu ei column gulo te. Lat/Long (5,6) bad, na hole "8831" lat-long er digit e mile jay.
 const SEARCH_COLS = [0, 1, 2, 3, 4, 7];
 
 function buildMasterIndex(masterVal) {
@@ -160,7 +153,6 @@ function buildMasterIndex(masterVal) {
         if (!row) continue;
         const name = str(row[0]);
         const ids = parseIds(name);
-        // alias: DHK_Y2952 ke DHK2952 / 2952 likhlew khuje paoa jabe
         const aliases = new Set([safeKey(name)]);
         ids.forEach(id => { aliases.add(idCode(id)); if (id.reg) aliases.add(id.reg + id.num); aliases.add(id.num); });
         out.push({
@@ -172,7 +164,6 @@ function buildMasterIndex(masterVal) {
     return out;
 }
 
-// Multi-word AND search + ranking (exact > starts-with > name-contains > onno column)
 function searchRows(index, query) {
     const tokens = query.split(/\s+/).filter(Boolean);
     if (!tokens.length) return [];
@@ -182,7 +173,6 @@ function searchRows(index, query) {
     const hits = [];
     for (const e of index) {
         const textHit = tokens.every(t => e.hay.includes(t));
-        // DHK2952 likhle region-hin master naam (X2952) o ashbe
         const idHit = !textHit && qi && e.ids.some(m =>
             m.num === qi.num && (!m.reg || !qi.reg || m.reg === qi.reg) && typOk(m.typ, qi.typ));
         if (!textHit && !idHit) continue;
@@ -200,8 +190,6 @@ function searchRows(index, query) {
 // MATCHING CORE END
 // =====================================================================
 
-// ---------- In-memory cache (Firebase realtime sync) ----------
-// Ager version prottek message e duita pura DB download korto -> eta e lag er main karon.
 const state = {
     index: [],
     keyIdx: buildKeyIndex({}),
@@ -241,7 +229,6 @@ async function sendHtml(ctx, html) {
         await ctx.reply(html, { parse_mode: 'HTML', disable_web_page_preview: true });
     } catch (err) {
         console.log("Format Error:", err.message);
-        // HTML fail korle plain text e pathai, jate user kichu na pay emon na hoy
         const plain = html.replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
         await ctx.reply(plain.slice(0, 4000), { disable_web_page_preview: true }).catch(() => {});
     }
@@ -321,7 +308,6 @@ bot.on('text', async (ctx) => {
             return b + `────────────────\n`;
         });
 
-        // Telegram limit er moddhe thaka block gulo ei rakhi (tag er majhkhane kata hobe na)
         let response = header;
         let included = 0;
         for (const b of blocks) {
@@ -345,15 +331,12 @@ bot.on('text', async (ctx) => {
 bot.catch((err) => console.error("Bot handler error:", err.message));
 
 // ---------- Keep-alive + secure web API ----------
-// Master PIN server e thake (env: MASTER_PIN). Browser e PIN lekha nei.
 const MASTER_PIN = String(process.env.MASTER_PIN || '787898');
 const TG_CHAT_ID = process.env.TG_CHAT_ID || '682844989';
 const UIDS = { admin: 'phoenix-admin', user: 'phoenix-user' };
 const sha = (x) => crypto.createHash('sha256').update(String(x)).digest();
 const pinOk = (p) => crypto.timingSafeEqual(sha(p), sha(MASTER_PIN));
 
-// ---------- PIN store: Firebase app_config/pins (shudhu hash, client access bondho) ----------
-// MASTER_PIN (env) shob somoy Admin PIN hishebe kaj kore = recovery PIN.
 const scrypt = (pin, salt) => new Promise((ok, no) => crypto.scrypt(String(pin), salt, 32, (e, k) => (e ? no(e) : ok(k))));
 async function hashPin(pin) {
     const salt = crypto.randomBytes(16);
@@ -368,19 +351,25 @@ async function checkHash(pin, rec) {
         return got.length === want.length && crypto.timingSafeEqual(got, want);
     } catch (_) { return false; }
 }
-// PIN dekhe role ber kore: 'admin' | 'user' | null
+
 async function roleForPin(pin) {
     pin = String(pin || '').trim();
     if (!pin) return null;
-    let pins = {};
-    try { pins = (await db.ref('app_config/pins').once('value')).val() || {}; }
-    catch (e) { console.error('PIN store read error:', e.message); }
-    if (pinOk(pin) || await checkHash(pin, pins.admin)) return 'admin';
-    if (await checkHash(pin, pins.user)) return 'user';
+    if (pinOk(pin)) return { role: 'admin', name: 'Master Admin' };
+    
+    let users = {};
+    try { 
+        users = (await db.ref('app_config/users').once('value')).val() || {}; 
+    } catch (e) { console.error('Users store read error:', e.message); }
+
+    for (const [uid, urec] of Object.entries(users)) {
+        if (await checkHash(pin, urec)) {
+            return { role: urec.role || 'user', name: urec.name || uid };
+        }
+    }
     return null;
 }
 
-// ---------- Activity log (server theke: login, login_failed, pin_change, push) ----------
 async function logActivity(role, action, site, detail) {
     try {
         await db.ref('activity_log').push({
@@ -390,7 +379,6 @@ async function logActivity(role, action, site, detail) {
     } catch (e) { console.error('Log error:', e.message); }
 }
 
-// Brute-force rokha: 5 bar vul PIN -> 15 min lock (IP wise)
 const fails = new Map();
 const MAX_FAILS = 5, LOCK_MS = 15 * 60 * 1000;
 const clientIp = (req) => String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
@@ -431,13 +419,60 @@ const server = http.createServer(async (req, res) => {
             if (isLocked(ip)) return sendJson(res, 429, { error: 'locked' });
             let body = {};
             try { body = JSON.parse((await readBody(req, 2000)).toString() || '{}'); } catch (_) {}
-            const role = body.pin ? await roleForPin(body.pin) : null;
-            if (!role) { noteFail(ip); logActivity('none', 'login_failed', '', ip); return sendJson(res, 401, { error: 'wrong pin' }); }
+            
+            const authResult = body.pin ? await roleForPin(body.pin) : null;
+            const role = authResult ? authResult.role : null;
+            const userName = authResult ? authResult.name : '';
+
+            if (!role) { 
+                noteFail(ip); 
+                logActivity('none', 'login_failed', '', ip); 
+                return sendJson(res, 401, { error: 'wrong pin' }); 
+            }
             fails.delete(ip);
-            if (body.check) return sendJson(res, 200, { ok: true, role });
-            const token = await admin.auth().createCustomToken(UIDS[role], { role });
-            logActivity(role, 'login', '', ip);
-            return sendJson(res, 200, { token, role });
+            if (body.check) return sendJson(res, 200, { ok: true, role, userName });
+            
+            const token = await admin.auth().createCustomToken(UIDS[role] || 'phoenix-user', { role, name: userName });
+            logActivity(role, 'login', userName, ip);
+            return sendJson(res, 200, { token, role, userName });
+        }
+
+        if (req.method === 'POST' && u.pathname === '/admin/users') {
+            const ip = clientIp(req);
+            if (isLocked(ip)) return sendJson(res, 429, { error: 'locked' });
+            const dec = await adminReq(req);
+            if (!dec || dec.role !== 'admin') return sendJson(res, 401, { error: 'unauthorized' });
+            
+            let body = {};
+            try { body = JSON.parse((await readBody(req, 2000)).toString() || '{}'); } catch (_) {}
+            const { action, username, newPin, role, currentAdminPin } = body;
+            
+            if ((await roleForPin(currentAdminPin))?.role !== 'admin') {
+                noteFail(ip);
+                return sendJson(res, 401, { error: 'Current Admin PIN thik na' });
+            }
+            fails.delete(ip);
+
+            const usersRef = db.ref('app_config/users');
+            if (action === 'add') {
+                if (!username || !/^\d{6}$/.test(newPin)) return sendJson(res, 400, { error: 'Username ar 6-digit PIN din' });
+                const safeUname = safeKey(username).toLowerCase();
+                const hashed = await hashPin(newPin);
+                await usersRef.child(safeUname).set({
+                    name: username,
+                    role: role === 'admin' ? 'admin' : 'user',
+                    ...hashed,
+                    updatedAt: admin.database.ServerValue.TIMESTAMP
+                });
+                logActivity('admin', 'user_add', username, role);
+                return sendJson(res, 200, { ok: true });
+            } else if (action === 'delete') {
+                if (!username) return sendJson(res, 400, { error: 'Username nai' });
+                await usersRef.child(safeKey(username).toLowerCase()).remove();
+                logActivity('admin', 'user_delete', username, '');
+                return sendJson(res, 200, { ok: true });
+            }
+            return sendJson(res, 400, { error: 'bad request' });
         }
 
         if (req.method === 'POST' && u.pathname === '/admin/push') {
@@ -454,26 +489,30 @@ const server = http.createServer(async (req, res) => {
             return sendJson(res, 200, { ok: true });
         }
 
-        if (req.method === 'POST' && u.pathname === '/admin/change-pin') {
-            const ip = clientIp(req);
-            if (isLocked(ip)) return sendJson(res, 429, { error: 'locked' });
-            const m = /^Bearer (.+)$/.exec(req.headers.authorization || '');
-            let dec = null;
-            try { dec = m ? await admin.auth().verifyIdToken(m[1]) : null; } catch (_) {}
-            if (!dec || dec.role !== 'admin') return sendJson(res, 401, { error: 'unauthorized' });
+        if (req.method === 'POST' && (u.pathname === '/admin/backup-config' || u.pathname === '/admin/backup-now')) {
+            if (!(await adminReq(req))) return sendJson(res, 401, { error: 'unauthorized' });
+            if (u.pathname === '/admin/backup-now') {
+                if (bkBusy) return sendJson(res, 409, { error: 'Backup cholche, kichukkhon por try korun' });
+                bkBusy = true;
+                try {
+                    const st = await sendBackup('manual');
+                    logActivity('admin', 'backup_now', '', st);
+                    return sendJson(res, 200, { ok: true, status: st });
+                } catch (e) { return sendJson(res, 500, { error: e.message }); }
+                finally { bkBusy = false; }
+            }
             let body = {};
-            try { body = JSON.parse((await readBody(req, 2000)).toString() || '{}'); } catch (_) {}
-            const target = body.target === 'user' ? 'user' : body.target === 'admin' ? 'admin' : null;
-            const newPin = String(body.newPin || '').trim();
-            if (!target) return sendJson(res, 400, { error: 'bad request' });
-            if (!/^\d{6}$/.test(newPin)) return sendJson(res, 400, { error: 'PIN 6 digit number hote hobe' });
-            if ((await roleForPin(body.currentPin)) !== 'admin') { noteFail(ip); return sendJson(res, 401, { error: 'Current Admin PIN thik na' }); }
-            fails.delete(ip);
-            const clash = await roleForPin(newPin);
-            if (clash && clash !== target) return sendJson(res, 409, { error: 'Ei PIN onno role e use hocche, onno PIN din' });
-            await db.ref('app_config/pins/' + target).set({ ...(await hashPin(newPin)), updatedAt: admin.database.ServerValue.TIMESTAMP });
-            logActivity('admin', 'pin_change', target, '');
-            return sendJson(res, 200, { ok: true });
+            try { body = JSON.parse((await readBody(req, 1000)).toString() || '{}'); } catch (_) {}
+            const ref = db.ref('app_config/backup');
+            let cfg = (await ref.once('value')).val() || {};
+            if (['off', 'daily', 'weekly'].includes(body.freq)) {
+                const upd = { freq: body.freq };
+                if (body.freq !== 'off' && !cfg.lastBackupAt) upd.lastBackupAt = Date.now();   
+                await ref.update(upd);
+                cfg = { ...cfg, ...upd };
+                logActivity('admin', 'backup_config', body.freq, '');
+            }
+            return sendJson(res, 200, { freq: cfg.freq || 'off', lastBackupAt: cfg.lastBackupAt || 0, lastStatus: cfg.lastStatus || '' });
         }
 
         res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -484,13 +523,119 @@ const server = http.createServer(async (req, res) => {
     }
 });
 
+const DHAKA_MS = 6 * 3600 * 1000;   
+const dhakaDate = () => new Date(Date.now() + DHAKA_MS).toISOString().slice(0, 10);
+const dhakaWhen = (ts) => new Date((ts || Date.now()) + DHAKA_MS).toISOString().replace('T', ' ').slice(5, 16);   
+
+async function adminReq(req) {
+    const m = /^Bearer (.+)$/.exec(req.headers.authorization || '');
+    try { const d = m ? await admin.auth().verifyIdToken(m[1]) : null; return d && d.role === 'admin' ? d : null; } catch (_) { return null; }
+}
+const tgSend = (html) => bot.telegram.sendMessage(TG_CHAT_ID, html, { parse_mode: 'HTML', disable_web_page_preview: true });
+
+const NOTE_LABEL = { add: 'New site', edit: 'Edit', merge: 'Merge', delete: 'Delete', import_master: 'Import data', import_keys: 'Import keys', wipe_master: 'WIPE data', wipe_keys: 'WIPE keys', pin_change: 'PIN changed', user_add: 'User Added', user_delete: 'User Deleted' };
+const NOTE_ICON = { add: '➕', edit: '✏️', merge: '🔀', delete: '🗑', import_master: '📥', import_keys: '📥', wipe_master: '⚠️', wipe_keys: '⚠️', pin_change: '🔐', user_add: '👤', user_delete: '👤' };
+const BOOT_MS = Date.now();
+const seenLog = new Set();
+let noteQ = [], noteTimer = null;
+
+function noteText(l) {
+    const out = [`${NOTE_ICON[l.action] || '•'} <b>${esc(NOTE_LABEL[l.action] || l.action)}</b> · by <b>${esc(l.role)}</b>`];
+    if (l.site) out.push(`📌 ${esc(l.site)}`);
+    if (l.detail) out.push(`🔧 ${esc(l.detail)}`);
+    out.push(`🕒 ${dhakaWhen(l.ts)} (Dhaka)`);
+    return out.join('\n');
+}
+function noteSummary(q) {
+    const by = {};
+    q.forEach(l => { const k = (NOTE_LABEL[l.action] || l.action) + ' (' + l.role + ')'; by[k] = (by[k] || 0) + 1; });
+    const sites = [...new Set(q.map(l => l.site).filter(Boolean))];
+    return `📦 <b>${q.length} ta change</b>\n` +
+        Object.entries(by).map(([k, n]) => `• ${esc(k)}: ${n}`).join('\n') +
+        (sites.length ? `\n📌 ${sites.slice(0, 8).map(esc).join(', ')}${sites.length > 8 ? ` +${sites.length - 8} more` : ''}` : '') +
+        `\n🕒 ${dhakaWhen()} (Dhaka)`;
+}
+async function flushNotes() {
+    noteTimer = null;
+    const q = noteQ; noteQ = [];
+    if (!q.length) return;
+    try {
+        if (q.length <= 3) { for (const l of q) await tgSend(noteText(l)); }
+        else await tgSend(noteSummary(q));   
+    } catch (e) { console.error('Notify error:', e.message); }
+}
+db.ref('activity_log').orderByKey().limitToLast(200).on('child_added', (snap) => {
+    const l = snap.val() || {};
+    if (seenLog.has(snap.key)) return;
+    seenLog.add(snap.key); if (seenLog.size > 2000) seenLog.clear();
+    if (!NOTE_LABEL[l.action]) return;
+    if (l.action === 'edit' && l.detail === 'no change') return;
+    if (!l.ts || l.ts < BOOT_MS - 2000) return;   
+    noteQ.push(l);
+    if (!noteTimer) noteTimer = setTimeout(flushNotes, 8000);
+}, (err) => console.error('Notify listener error:', err.message));
+
+let XLSX = null;
+try { XLSX = require('xlsx'); } catch (e) { console.error('⚠️ xlsx package install kora nai, auto backup bondho thakbe (npm install xlsx)'); }
+
+function lastSlot(freq, nowMs) {   
+    const d = new Date(nowMs + DHAKA_MS);
+    let slot = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 2);
+    if (slot > nowMs + DHAKA_MS) slot -= 86400000;
+    if (freq === 'weekly') slot -= new Date(slot).getUTCDay() * 86400000;
+    return slot - DHAKA_MS;
+}
+async function makeBackup() {
+    const [ms, ks] = await Promise.all([db.ref('professor_master_db').once('value'), db.ref('professor_keys_db').once('value')]);
+    const rows = toArray(ms.val()).map(r => { const a = normRow(r); return a ? Array.from(a, c => (c === undefined || c === null ? '' : c)) : []; });
+    const keys = ks.val() || {};
+    const keyRows = [['Site Name', 'Key Info'], ...Object.keys(keys).map(k => [k, valueToString(keys[k]).slice(0, 32000)])];
+    const mk = (aoa, name) => {
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), name);
+        return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    };
+    return { master: mk(rows, 'MasterData'), keys: mk(keyRows, 'KeysData'), sites: Math.max(rows.length - 1, 0), nkeys: keyRows.length - 1 };
+}
+async function sendBackup(kind) {
+    if (!XLSX) throw new Error('Server e xlsx package nai (npm install xlsx)');
+    const b = await makeBackup(), d = dhakaDate();
+    const cap = `💾 PHOENIX ${kind === 'auto' ? 'AUTO' : 'MANUAL'} BACKUP\n📅 ${d}\n🌐 Sites: ${b.sites} · 🔑 Keys: ${b.nkeys}`;
+    await bot.telegram.sendDocument(TG_CHAT_ID, { source: b.master, filename: `Phoenix_Master_${d}.xlsx` }, { caption: cap });
+    await bot.telegram.sendDocument(TG_CHAT_ID, { source: b.keys, filename: `Phoenix_Keys_${d}.xlsx` });
+    return `ok (${b.sites} sites, ${b.nkeys} keys)`;
+}
+let bkBusy = false, bkLastTry = 0;
+async function backupTick() {
+    if (bkBusy || !XLSX) return;
+    try {
+        const ref = db.ref('app_config/backup');
+        const cfg = (await ref.once('value')).val() || {};
+        if (cfg.freq !== 'daily' && cfg.freq !== 'weekly') return;
+        if ((cfg.lastBackupAt || 0) >= lastSlot(cfg.freq, Date.now())) return;   
+        if (Date.now() - bkLastTry < 30 * 60 * 1000) return;                     
+        bkBusy = true; bkLastTry = Date.now();
+        try {
+            const st = await sendBackup('auto');
+            await ref.update({ lastBackupAt: Date.now(), lastStatus: st });
+            logActivity('system', 'backup', '', st);
+        } catch (e) {
+            console.error('Backup error:', e.message);
+            await ref.update({ lastStatus: 'failed: ' + String(e.message).slice(0, 100) }).catch(() => {});
+        }
+    } catch (e) { console.error('Backup tick error:', e.message); }
+    finally { bkBusy = false; }
+}
+setInterval(backupTick, 60000);
+setTimeout(backupTick, 20000);
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`📡 Server listening on port ${PORT}`));
 
 const PING_URL = process.env.PING_URL || process.env.RENDER_EXTERNAL_URL || "https://link-edge.onrender.com";
 setInterval(() => {
     https.get(PING_URL, (res) => {
-        res.resume(); // response consume na korle socket jome thake
+        res.resume(); 
         console.log("⚡ Keep-Alive: Pinged at " + new Date().toLocaleTimeString());
     }).on('error', (err) => {
         console.error("Ping Error: " + err.message);
