@@ -1,561 +1,265 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Phoenix Controller 3.4 - Professor Edition</title>
-    <link rel="icon" type="image/jpeg" href="./bts-logo.jpg">
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
-
-        :root { 
-            --primary: #6366f1; --primary-hover: #4f46e5;
-            --bg: #f8fafc; --card: #ffffff;
-            --card-border: rgba(0, 0, 0, 0.06);
-            --text: #0f172a; --text-muted: #64748b;
-            --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
-            --gp: #00a651; --robi: #e30613; --bl: #ff8200;
-            --input-bg: #f1f5f9;
-            --border: #e2e8f0;
-            --header-bg: #ffffff;
-            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-            --radius: 16px;
-        }
-
-        [data-theme="dark"] {
-            --bg: #0b0f19; --card: #111827;
-            --card-border: rgba(255, 255, 255, 0.06);
-            --text: #f8fafc; --text-muted: #94a3b8;
-            --input-bg: #1f2937;
-            --border: #374151;
-            --header-bg: #111827;
-            --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body { 
-            font-family: 'Inter', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-            min-height: 100vh;
-            transition: background 0.3s ease, color 0.3s ease;
-        }
-
-        #loginGate {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg);
-            z-index: 10000; 
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden;
-        }
-
-        #canvasBg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; opacity: 0.15; }
-
-        .auth-card {
-            background: var(--card);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--border);
-            padding: 40px 32px;
-            border-radius: 24px;
-            box-shadow: var(--shadow);
-            width: 90%;
-            max-width: 400px;
-            text-align: left;
-            position: relative;
-            z-index: 10;
-        }
-
-        .auth-logo {
-            width: 56px;
-            height: 56px;
-            background: transparent;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 24px;
-            overflow: hidden;
-        }
-
-        .auth-card h1 { 
-            font-size: 24px; 
-            font-weight: 800;
-            margin-bottom: 6px;
-            color: var(--text);
-            letter-spacing: -0.5px;
-        }
-
-        .auth-subtitle {
-            color: var(--text-muted);
-            font-size: 13px;
-            margin-bottom: 28px;
-        }
-
-        .auth-input {
-            width: 100%; 
-            padding: 14px 16px; 
-            margin-bottom: 16px; 
-            background: var(--input-bg);
-            border: 1px solid var(--border); 
-            border-radius: 12px; 
-            color: var(--text); 
-            font-size: 14px;
-            outline: none;
-            transition: all 0.2s;
-        }
-
-        .auth-input:focus { 
-            border-color: var(--primary); 
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-        }
-
-        .auth-btn {
-            width: 100%; 
-            padding: 14px; 
-            background: var(--primary);
-            color: white;
-            border: none; 
-            border-radius: 12px; 
-            font-weight: 600; 
-            font-size: 14px;
-            cursor: pointer; 
-            transition: all 0.2s;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
-            margin-top: 8px;
-        }
-
-        .auth-btn:hover { 
-            background: var(--primary-hover);
-            transform: translateY(-1px);
-        }
-
-        #authError {
-            color: var(--danger); 
-            font-size: 12px; 
-            margin-top: 14px; 
-            display: none; 
-            font-weight: 600;
-            padding: 8px 12px;
-            background: rgba(239, 68, 68, 0.1);
-            border-radius: 8px;
-        }
-
-        #mainApp { display: none; }
-
-        .container { 
-            width: 94%; 
-            max-width: 1380px; 
-            margin: 24px auto; 
-            background: var(--card);
-            padding: 28px; 
-            border-radius: 24px; 
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow);
-        }
-
-        header { 
-            display: flex; 
-            flex-direction: column; 
-            gap: 20px; 
-            margin-bottom: 28px; 
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        @media (min-width: 768px) { 
-            header { flex-direction: row; justify-content: space-between; align-items: center; } 
-        }
-
-        header h2 { 
-            margin: 0; 
-            font-size: 20px;
-            font-weight: 700;
-            display: flex; 
-            align-items: center; 
-            gap: 12px;
-            color: var(--text);
-        }
-
-        .logo-icon {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
-
-        .btn {
-            padding: 10px 16px; 
-            border-radius: 10px; 
-            border: none; 
-            cursor: pointer;
-            font-weight: 600; 
-            font-size: 13px; 
-            display: flex; 
-            align-items: center; 
-            gap: 8px;
-            transition: all 0.2s;
-        }
-
-        .btn:active { transform: scale(0.98); }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-hover); }
-        .btn-secondary { background: var(--input-bg); color: var(--text); border: 1px solid var(--border); }
-        .btn-secondary:hover { background: var(--border); }
-        .btn-success { background: var(--success); color: white; }
-        .btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
-        .btn-danger:hover { background: var(--danger); color: white; }
-
-        .icon-btn {
-            background: var(--input-bg); 
-            color: var(--text);
-            border: 1px solid var(--border); 
-            width: 38px; 
-            height: 38px;
-            border-radius: 10px; 
-            cursor: pointer; 
-            font-size: 14px;
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            transition: all 0.2s;
-        }
-        .icon-btn:hover { background: var(--border); }
-        .logout-btn:hover { color: var(--danger); border-color: var(--danger); background: rgba(239, 68, 68, 0.1); }
-
-        .stats-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
-            gap: 16px; 
-            margin-bottom: 24px; 
-        }
-
-        .stat-card { 
-            background: var(--input-bg);
-            border: 1px solid var(--border);
-            padding: 18px 20px; 
-            border-radius: var(--radius); 
-        }
-
-        .stat-card h4 { margin: 0; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .stat-card p { margin: 6px 0 0; font-size: 24px; font-weight: 700; color: var(--text); }
-
-        .progress-section {
-            background: var(--input-bg);
-            border: 1px solid var(--border);
-            padding: 20px 24px; 
-            border-radius: var(--radius); 
-            margin-bottom: 24px;
-        }
-
-        .progress-row {
-            display: flex; 
-            align-items: center; 
-            gap: 16px; 
-            font-size: 12px; 
-            font-weight: 600;
-            margin-bottom: 12px;
-        }
-
-        .progress-row:last-child { margin-bottom: 0; }
-        .progress-label { width: 80px; color: var(--text-muted); }
-
-        .progress-bar-bg {
-            flex: 1; 
-            height: 8px; 
-            background: var(--card); 
-            border: 1px solid var(--border);
-            border-radius: 10px; 
-            overflow: hidden;
-        }
-
-        .progress-bar-fill { height: 100%; border-radius: 10px; transition: width 0.6s ease; }
-        .progress-count { width: 35px; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
-
-        .toolbar {
-            display: flex; 
-            flex-wrap: wrap; 
-            justify-content: space-between; 
-            align-items: center; 
-            gap: 16px; 
-            margin-bottom: 20px;
-        }
-
-        .search-wrapper { position: relative; width: 100%; max-width: 320px; }
-
-        .search-input {
-            width: 100%; 
-            padding: 11px 16px 11px 40px; 
-            background: var(--input-bg);
-            border: 1px solid var(--border); 
-            color: var(--text);
-            border-radius: 12px; 
-            font-size: 13px; 
-            outline: none;
-            transition: all 0.2s;
-        }
-
-        .search-input:focus { border-color: var(--primary); background: var(--card); }
-
-        .search-icon {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            font-size: 13px;
-        }
-
-        .table-container { 
-            max-height: 58vh; 
-            overflow: auto; 
-            border-radius: var(--radius); 
-            border: 1px solid var(--border);
-            background: var(--card);
-        }
-
-        table { width: 100%; border-collapse: collapse; min-width: 900px; }
-
-        th { 
-            position: sticky; 
-            top: 0; 
-            background: var(--input-bg); 
-            padding: 14px 16px; 
-            color: var(--text-muted);
-            font-size: 11px; 
-            font-weight: 700;
-            text-align: left; 
-            z-index: 10;
-            border-bottom: 1px solid var(--border);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 13px; }
-        tr:hover td { background: rgba(99, 102, 241, 0.02); }
-
-        .client-tag { font-weight: 600; padding: 4px 10px; border-radius: 6px; font-size: 11px; }
-        .tag-gp { background: rgba(0, 166, 81, 0.12); color: var(--gp); }
-        .tag-robi { background: rgba(227, 6, 19, 0.12); color: var(--robi); }
-        .tag-bl { background: rgba(255, 130, 0, 0.12); color: var(--bl); }
-
-        .key-text { 
-            color: var(--success); 
-            font-size: 12px; 
-            font-family: 'JetBrains Mono', monospace;
-            white-space: pre-wrap; 
-            word-break: break-word; 
-            max-width: 300px; 
-            display: block;
-        }
-
-        .op-btn {
-            padding: 6px 12px; 
-            border-radius: 8px; 
-            border: 1px solid var(--border);
-            background: var(--input-bg);
-            color: var(--text);
-            cursor: pointer;
-            font-weight: 600; 
-            font-size: 12px;
-            transition: all 0.2s;
-        }
-        .op-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--card); }
-
-        #editSection {
-            background: var(--input-bg);
-            padding: 24px; 
-            border-radius: var(--radius); 
-            border: 1px solid var(--primary);
-            margin-bottom: 24px;
-            display: none;
-        }
-
-        #editSection h3 { margin-top: 0; color: var(--primary); font-size: 16px; margin-bottom: 16px; font-weight: 700; }
-
-        #inputGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
-
-        .input-box {
-            width: 100%; 
-            padding: 11px 14px; 
-            background: var(--card);
-            border: 1px solid var(--border); 
-            color: var(--text);
-            border-radius: 10px; 
-            font-size: 13px; 
-            outline: none;
-        }
-
-        .input-box:focus { border-color: var(--primary); }
-        textarea.input-box { grid-column: 1 / -1; min-height: 90px; resize: vertical; font-family: 'JetBrains Mono', monospace; }
-
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-
-        footer {
-            margin-top: 24px; 
-            padding-top: 18px;
-            border-top: 1px solid var(--border); 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        .status-badge {
-            display: flex; align-items: center; gap: 8px;
-            padding: 5px 10px; background: rgba(16, 185, 129, 0.1);
-            border-radius: 20px; color: var(--success); font-weight: 600; font-size: 11px;
-        }
-        .mono { font-family: 'JetBrains Mono', monospace; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Phoenix Controller</title>
+<link rel="icon" type="image/jpeg" href="./bts-logo.jpg">
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+:root{--bg:#f2f4f9;--card:#fff;--side:#fff;--text:#1b2234;--muted:#6b7488;--border:#e2e6ee;--primary:#4f6df5;--primary-s:rgba(79,109,245,.12);--input:#f0f3f8;--ok:#10b981;--bad:#ef4444;--gp:#3b82f6;--robi:#ef4444;--bl:#f59e0b;--r:14px}
+[data-theme=dark]{--bg:#0c1016;--card:#151a23;--side:#10141b;--text:#e6eaf2;--muted:#8b95a8;--border:#222a38;--input:#1b212d;--primary-s:rgba(99,125,255,.16)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:14px;-webkit-text-size-adjust:100%}
+button{font:inherit;cursor:pointer;border:0;color:inherit;background:none}
+input,textarea{font:inherit;color:var(--text)}
+.mono,code{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace}
+/* login */
+#loginGate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(900px 500px at 20% 0,var(--primary-s),transparent),var(--bg);z-index:100}
+.auth-card{width:100%;max-width:380px;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px 26px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.15)}
+.auth-logo{width:64px;height:64px;border-radius:16px;margin:0 auto 14px;background:var(--primary-s);display:grid;place-items:center;overflow:hidden;color:var(--primary);font-size:26px}
+.auth-logo img{width:100%;height:100%;object-fit:cover}
+.auth-card h1{font-size:21px;margin-bottom:4px}.auth-card p{color:var(--muted);font-size:13px;margin-bottom:20px}
+.pin{width:100%;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--input);text-align:center;font-size:22px;letter-spacing:8px;outline:0}
+.pin:focus,.inp:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-s)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border-radius:10px;font-weight:600;font-size:13px;border:1px solid var(--border);background:var(--card);transition:.15s}
+.btn:hover{border-color:var(--primary);color:var(--primary)}
+.btn-p{background:var(--primary);border-color:var(--primary);color:#fff!important}.btn-p:hover{filter:brightness(1.1)}
+.btn-d{color:var(--bad);border-color:rgba(239,68,68,.35)}.btn-d:hover{background:rgba(239,68,68,.08);color:var(--bad);border-color:var(--bad)}
+.btn:disabled{opacity:.6}
+#authBtn{width:100%;margin-top:12px;padding:13px}
+#authError{display:none;color:var(--bad);font-size:13px;margin-top:12px}
+/* shell */
+#app{display:none;min-height:100dvh}
+.side{width:244px;flex:none;position:sticky;top:0;height:100dvh;background:var(--side);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:18px 12px;z-index:60}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px;font-weight:700;font-size:16px}
+.brand .lg{width:36px;height:36px;border-radius:10px;overflow:hidden;background:var(--primary-s);display:grid;place-items:center;color:var(--primary)}
+.brand img{width:100%;height:100%;object-fit:cover}.brand small{display:block;font-weight:500;color:var(--muted);font-size:11px}
+.nav{display:flex;flex-direction:column;gap:4px;flex:1}
+.nav button,.side-foot button{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border-radius:10px;color:var(--muted);font-weight:600;text-align:left}
+.nav button i,.side-foot button i{width:18px;text-align:center}
+.nav button:hover,.side-foot button:hover{background:var(--input);color:var(--text)}
+.nav button.active{background:var(--primary-s);color:var(--primary)}
+.side-foot{border-top:1px solid var(--border);padding-top:10px}
+main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:12px;padding:12px 20px;padding-top:max(12px,env(safe-area-inset-top));background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.top h2{font-size:18px;flex:1}
+.ib{width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--card);display:grid;place-items:center}
+#menuBtn{display:none}
+.content{padding:20px;padding-bottom:max(20px,env(safe-area-inset-bottom));max-width:1280px;width:100%;margin:0 auto}
+.page{display:none}.page.active{display:block}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:55}
+/* cards */
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px}
+.stat h4{font-size:11px;letter-spacing:.8px;color:var(--muted);margin-bottom:8px}.stat p{font-size:28px;font-weight:700}
+.prow{display:grid;grid-template-columns:90px 1fr 50px;align-items:center;gap:12px;margin:12px 0}
+.pbg{height:8px;border-radius:8px;background:var(--input);overflow:hidden}.pbar{height:100%;width:0;border-radius:8px;transition:width .5s}
+.lbl{font-size:12px;font-weight:700;color:var(--muted)}.cnt{text-align:right;font-weight:700}
+.sec-t{font-size:15px;font-weight:700;margin-bottom:4px}.sec-s{color:var(--muted);font-size:13px;margin-bottom:14px}
+.tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.tools .btn{justify-content:flex-start;padding:13px 14px}
+/* sites */
+.bar{display:flex;gap:10px;margin-bottom:14px}
+.sw{position:relative;flex:1}.sw i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.inp{width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:var(--input);outline:0}
+.sw .inp{padding-left:40px;height:44px;background:var(--card)}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;letter-spacing:.7px;color:var(--muted);text-align:left;padding:12px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+tbody tr:hover{background:var(--primary-s)}
+.tw{overflow:hidden;padding:0}
+.key-text{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12px;color:var(--muted);max-width:280px;word-break:break-word}
+.tag{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;background:var(--input);color:var(--muted)}
+.tag-gp{background:rgba(59,130,246,.15);color:var(--gp)}.tag-robi{background:rgba(239,68,68,.15);color:var(--robi)}.tag-bl{background:rgba(245,158,11,.15);color:var(--bl)}
+.acts{display:flex;gap:6px;justify-content:center}
+.op{padding:7px 12px;border-radius:8px;font-size:12px;font-weight:700;border:1px solid var(--border);background:var(--card)}
+.op.v{color:var(--primary);border-color:var(--primary-s);background:var(--primary-s)}
+.ipc{background:var(--input);padding:4px 8px;border-radius:6px;font-weight:600}
+.more{text-align:center;color:var(--muted);padding:14px}
+/* modal */
+.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);z-index:90;padding:12px}
+.modal.open{display:flex}
+.sheet{background:var(--card);border:1px solid var(--border);border-radius:18px;width:100%;max-width:660px;max-height:92dvh;overflow:auto;padding:22px}
+.sheet h3{font-size:17px;margin-bottom:14px}
+#inputGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+textarea.inp{grid-column:1/-1;min-height:110px;resize:vertical}
+.mf{display:flex;gap:10px;margin-top:16px}.mf .btn-p{flex:1}
+.kv{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--border)}
+.kv span{color:var(--muted);flex:none}.kv b{text-align:right;word-break:break-word}.kv.full{display:block;border:0}
+.kv pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;margin-top:8px;padding:12px;border-radius:10px;background:var(--input);line-height:1.5}
+.kv a{color:var(--primary);font-weight:700;text-decoration:none}
+.about{color:var(--muted);font-size:12px;line-height:1.8}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+@media(max-width:900px){
+ .side{position:fixed;left:0;top:0;transform:translateX(-102%);transition:transform .25s;box-shadow:0 0 40px rgba(0,0,0,.35)}
+ .side.open{transform:none}.overlay.open{display:block}
+ #menuBtn{display:grid}.content{padding:14px}.top{padding:10px 14px}
+}
+@media(max-width:760px){
+ .grid3{grid-template-columns:1fr}.stat p{font-size:24px}
+ .inp,.pin{font-size:16px}#inputGrid{grid-template-columns:1fr}
+ .tw{background:none;border:0}
+ table,tbody,tr,td{display:block}thead{display:none}
+ tr{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:10px}
+ td{border:0;padding:6px 0;display:flex;justify-content:space-between;align-items:center;gap:14px;text-align:right}
+ td::before{content:attr(data-label);color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.5px;flex:none;text-align:left}
+ td.id{font-size:16px;font-weight:700;color:var(--primary);justify-content:flex-start;text-align:left}td.id::before{display:none}
+ td.ac{padding-top:10px}td.ac::before{display:none}.acts{width:100%}.acts .op{flex:1;padding:11px}
+ .key-text{max-width:none}
+ .bar{flex-wrap:wrap}.bar .btn{width:100%}
+}
+</style>
 </head>
 <body data-theme="dark">
-    <div id="loginGate">
-        <canvas id="canvasBg"></canvas>
-        <div class="auth-card">
-            <div class="auth-logo">
-                <img src="./bts-logo.jpg" alt="BTS Logo" style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px;">
-            </div>
-            <h1>Phoenix Access</h1>
-            <p class="auth-subtitle">Dhanmondi SC secure operations console</p>
-            <input type="text" id="userIn" class="auth-input" placeholder="Identity (Gmail)" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="username">
-            <input type="password" id="passIn" class="auth-input" placeholder="Access Key" autocomplete="current-password" onkeydown="if(event.key==='Enter')verifyAccess()">
-            <button onclick="verifyAccess()" class="auth-btn">Authorize System</button>
-            <p id="authError">Access Denied: Invalid Credentials</p>
-        </div>
+
+<div id="loginGate">
+ <div class="auth-card">
+  <div class="auth-logo"><img src="./bts-logo.jpg" alt="" onerror="this.replaceWith(Object.assign(document.createElement('i'),{className:'fas fa-shield-halved'}))"></div>
+  <h1>Phoenix Controller</h1>
+  <p>Enter Master PIN to continue</p>
+  <input type="password" id="pinIn" class="pin" inputmode="numeric" autocomplete="current-password" placeholder="••••••" onkeydown="if(event.key==='Enter')verifyAccess()">
+  <button id="authBtn" class="btn btn-p" onclick="verifyAccess()">Unlock</button>
+  <div id="authError"></div>
+ </div>
+</div>
+
+<div id="app">
+ <div class="overlay" id="overlay" onclick="closeNav()"></div>
+ <aside class="side" id="side">
+  <div class="brand"><div class="lg"><img src="./bts-logo.jpg" alt="" onerror="this.style.display='none'"></div><div>Phoenix<small>Controller</small></div></div>
+  <nav class="nav">
+   <button data-p="dash" onclick="showPage('dash')" class="active"><i class="fas fa-gauge-high"></i>Dashboard</button>
+   <button data-p="sites" onclick="showPage('sites')"><i class="fas fa-tower-cell"></i>Sites</button>
+   <button data-p="data" onclick="showPage('data')"><i class="fas fa-database"></i>Data Tools</button>
+   <button data-p="set" onclick="showPage('set')"><i class="fas fa-gear"></i>Settings</button>
+  </nav>
+  <div class="side-foot"><button onclick="logout()"><i class="fas fa-right-from-bracket"></i>Logout</button></div>
+ </aside>
+ <main>
+  <div class="top">
+   <button class="ib" id="menuBtn" onclick="openNav()" aria-label="Menu"><i class="fas fa-bars"></i></button>
+   <h2 id="pageTitle">Dashboard</h2>
+   <button class="ib" onclick="toggleTheme()" aria-label="Theme"><i class="fas fa-moon" id="themeIcon"></i></button>
+  </div>
+  <div class="content">
+   <section class="page active" id="pg-dash">
+    <div class="grid3">
+     <div class="card stat"><h4>TOTAL SITES</h4><p id="statTotal">0</p></div>
+     <div class="card stat"><h4>TOTAL KEYS</h4><p id="statKeysCount">0</p></div>
+     <div class="card stat"><h4>LAST SYNC</h4><p id="statTime" class="mono">--:--</p></div>
     </div>
-
-    <div id="mainApp">
-        <div class="container">
-            <header>
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <button onclick="toggleTheme()" class="icon-btn" title="Toggle Theme">
-                        <i class="fas fa-moon" id="themeIcon"></i>
-                    </button>
-                    <button onclick="logout()" class="icon-btn logout-btn" title="Logout System">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
-                    <h2>
-                        <div class="logo-icon">
-                            <img src="./bts-logo.jpg" alt="BTS Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
-                        </div>
-                        Phoenix <span style="color: var(--primary);">Controller V3.4</span>
-                    </h2>
-                </div>
-                <div class="btn-group">
-                    <input type="file" id="fileInputData" style="display:none" accept=".xlsx, .xls, .csv">
-                    <input type="file" id="fileInputKey" style="display:none" accept=".xlsx, .xls, .csv">
-                    <button onclick="document.getElementById('fileInputData').click()" class="btn btn-secondary"><i class="fas fa-file-import"></i> Import Data</button>
-                    <button onclick="document.getElementById('fileInputKey').click()" class="btn btn-secondary"><i class="fas fa-key"></i> Import Key</button>
-                    <button onclick="exportMaster()" class="btn btn-success"><i class="fas fa-file-export"></i> Backup Data</button>
-                    <button onclick="exportKeys()" class="btn btn-secondary"><i class="fas fa-file-medical"></i> Backup Key</button>
-                    <button onclick="pushToTelegram()" class="btn" style="background: #0088cc; color:#fff;"><i class="fas fa-paper-plane"></i> Push</button>
-                    <button onclick="wipeData()" class="btn btn-danger"><i class="fas fa-trash"></i> Wipe Data</button>
-                    <button onclick="wipeKeyData()" class="btn btn-danger" style="border-color: #f59e0b; color: #f59e0b;"><i class="fas fa-key"></i> Wipe Key Data</button>
-                </div>
-            </header>
-
-            <div class="stats-grid">
-                <div class="stat-card"><h4>TOTAL SITES</h4><p id="statTotal">0</p></div>
-                <div class="stat-card"><h4>TOTAL KEYS</h4><p id="statKeysCount">0</p></div>
-                <div class="stat-card"><h4>SYNC STATUS</h4><p id="statTime" class="mono">00:00</p></div>
-            </div>
-
-            <div class="progress-section">
-                <div class="progress-row">
-                    <span class="progress-label">GRAMEEN</span>
-                    <div class="progress-bar-bg"><div id="barGP" class="progress-bar-fill" style="width:0%; background: var(--gp);"></div></div>
-                    <span id="cntGP" class="progress-count">0</span>
-                </div>
-                <div class="progress-row">
-                    <span class="progress-label">ROBI</span>
-                    <div class="progress-bar-bg"><div id="barRobi" class="progress-bar-fill" style="width:0%; background: var(--robi);"></div></div>
-                    <span id="cntRobi" class="progress-count">0</span>
-                </div>
-                <div class="progress-row">
-                    <span class="progress-label">BL</span>
-                    <div class="progress-bar-bg"><div id="barBL" class="progress-bar-fill" style="width:0%; background: var(--bl);"></div></div>
-                    <span id="cntBL" class="progress-count">0</span>
-                </div>
-            </div>
-
-            <div class="toolbar">
-                <div class="search-wrapper">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="searchInput" placeholder="Search Code..." onkeyup="debounceFilter()" class="search-input">
-                </div>
-                <button onclick="toggleForm('add')" class="btn btn-primary"><i class="fas fa-plus"></i> NEW ENTRY</button>
-            </div>
-
-            <div id="editSection">
-                <h3 id="formTitle">Management</h3>
-                <div id="inputGrid">
-                    <input type="text" id="editName" placeholder="Site Name" class="input-box">
-                    <input type="text" id="editIP" placeholder="IP Address" class="input-box">
-                    <input type="text" id="editSub" placeholder="Sub-Center" class="input-box">
-                    <input type="text" id="editNode" placeholder="Node Address" class="input-box">
-                    <input type="text" id="editModel" placeholder="Model" class="input-box">
-                    <input type="text" id="editLat" placeholder="Latitude" class="input-box">
-                    <input type="text" id="editLong" placeholder="Longitude" class="input-box">
-                    <input type="text" id="editClient" placeholder="Client (GP/ROBI/BL)" class="input-box">
-                    <textarea id="editKey" placeholder="Key / Notes Info..." class="input-box"></textarea>
-                </div>
-                <div style="margin-top:16px; display:flex; gap:10px;">
-                    <button id="saveBtn" onclick="updateMasterData()" class="btn btn-primary" style="flex:1; justify-content:center;">SAVE RECORD</button>
-                    <button onclick="toggleForm('hide')" class="btn btn-secondary">CANCEL</button>
-                </div>
-            </div>
-
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Identity</th>
-                            <th>Network IP</th>
-                            <th>Model Info</th>
-                            <th>Location</th>
-                            <th>Client</th>
-                            <th>Key Info</th>
-                            <th style="text-align:center;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="fullTable"></tbody>
-                </table>
-            </div>
-
-            <footer>
-                <span class="status-badge">
-                    <i class="fas fa-circle" style="font-size: 6px;"></i> System Operational
-                </span>
-                <span class="mono" style="opacity: 0.7; font-size: 11px;">PHOENIX V3.4 | PROFESSOR BUILD</span>
-            </footer>
-        </div>
+    <div class="card">
+     <div class="sec-t">Clients</div>
+     <div class="prow"><span class="lbl">GRAMEEN</span><div class="pbg"><div id="barGP" class="pbar" style="background:var(--gp)"></div></div><span id="cntGP" class="cnt">0</span></div>
+     <div class="prow"><span class="lbl">ROBI</span><div class="pbg"><div id="barRobi" class="pbar" style="background:var(--robi)"></div></div><span id="cntRobi" class="cnt">0</span></div>
+     <div class="prow"><span class="lbl">BANGLALINK</span><div class="pbg"><div id="barBL" class="pbar" style="background:var(--bl)"></div></div><span id="cntBL" class="cnt">0</span></div>
     </div>
+   </section>
 
-    <script>
-        const firebaseConfig = { databaseURL: "https://phoenixdatabase-v1-default-rtdb.firebaseio.com/" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+   <section class="page" id="pg-sites">
+    <div class="bar">
+     <div class="sw"><i class="fas fa-search"></i><input type="text" id="searchInput" class="inp" placeholder="Search site code, IP, node..." oninput="debounceFilter()"></div>
+     <button onclick="toggleForm('add')" class="btn btn-p"><i class="fas fa-plus"></i> New Entry</button>
+    </div>
+    <div class="card tw"><table>
+     <thead><tr><th>IDENTITY</th><th>IP</th><th>MODEL</th><th>LOCATION</th><th>CLIENT</th><th>KEY INFO</th><th style="text-align:center">ACTION</th></tr></thead>
+     <tbody id="fullTable"></tbody>
+    </table></div>
+   </section>
 
-        const _0x4f22 = [
-            "YWhtZWRmb3lzYWwwMDM2QGdtYWlsLmNvbQ==", 
-            "R2VtaW5pX2AyMDI2",                             
-            "RGhhbm1vbmRpU0M=",                             
-            "RGhhbm1vbmRpQDEyMw==",                         
-            "Nzg3ODk4"                                   
-        ];
+   <section class="page" id="pg-data">
+    <input type="file" id="fileInputData" hidden accept=".xlsx,.xls,.csv">
+    <input type="file" id="fileInputKey" hidden accept=".xlsx,.xls,.csv">
+    <div class="card" style="margin-bottom:14px">
+     <div class="sec-t">Import</div><div class="sec-s">Excel / CSV theke Firebase e upload</div>
+     <div class="tools">
+      <button class="btn" onclick="$('fileInputData').click()"><i class="fas fa-file-import"></i> Import Data</button>
+      <button class="btn" onclick="$('fileInputKey').click()"><i class="fas fa-key"></i> Import Key</button>
+     </div>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+     <div class="sec-t">Backup</div><div class="sec-s">Master PIN lagbe</div>
+     <div class="tools">
+      <button class="btn" onclick="exportMaster()"><i class="fas fa-file-export"></i> Backup Data</button>
+      <button class="btn" onclick="exportKeys()"><i class="fas fa-file-medical"></i> Backup Key</button>
+      <button class="btn" onclick="pushToTelegram()"><i class="fas fa-paper-plane"></i> Push to Telegram</button>
+     </div>
+     <div id="pushStatus" class="sec-s" style="margin:12px 0 0"></div>
+    </div>
+    <div class="card">
+     <div class="sec-t" style="color:var(--bad)">Danger zone</div><div class="sec-s">Master PIN lagbe, undo kora jay na</div>
+     <div class="tools">
+      <button class="btn btn-d" onclick="wipeData()"><i class="fas fa-trash"></i> Wipe Data</button>
+      <button class="btn btn-d" onclick="wipeKeyData()"><i class="fas fa-key"></i> Wipe Key Data</button>
+     </div>
+    </div>
+   </section>
+
+   <section class="page" id="pg-set">
+    <div class="card" style="margin-bottom:14px">
+     <div class="sec-t">Appearance</div><div class="sec-s">Dark / Light theme</div>
+     <button class="btn" onclick="toggleTheme()"><i class="fas fa-circle-half-stroke"></i> Toggle theme</button>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+     <div class="sec-t">Session</div><div class="sec-s">Browser bondho korle auto logout hoy</div>
+     <button class="btn btn-d" onclick="logout()"><i class="fas fa-right-from-bracket"></i> Logout</button>
+    </div>
+    <div class="card about"><b>PHOENIX V4.0</b><br><span class="status"><i class="fas fa-circle" style="font-size:6px;color:var(--ok)"></i> System Operational</span></div>
+   </section>
+  </div>
+ </main>
+</div>
+
+<div class="modal" id="viewModal" onclick="if(event.target===this)closeView()">
+ <div class="sheet"><h3>Site Details</h3><div id="viewBody"></div>
+  <div class="mf"><button class="btn btn-p" onclick="editFromView()"><i class="fas fa-pen"></i> Edit</button><button class="btn" onclick="copyIP()"><i class="fas fa-copy"></i> Copy IP</button><button class="btn" onclick="closeView()">Close</button></div>
+ </div>
+</div>
+
+<div class="modal" id="editSection" onclick="if(event.target===this)toggleForm('hide')">
+ <div class="sheet"><h3 id="formTitle">Management</h3>
+  <div id="inputGrid">
+   <input type="text" id="editName" placeholder="Site Name" class="inp">
+   <input type="text" id="editIP" placeholder="IP Address" class="inp">
+   <input type="text" id="editSub" placeholder="Sub-Center" class="inp">
+   <input type="text" id="editNode" placeholder="Node Address" class="inp">
+   <input type="text" id="editModel" placeholder="Model" class="inp">
+   <input type="text" id="editLat" placeholder="Latitude" class="inp">
+   <input type="text" id="editLong" placeholder="Longitude" class="inp">
+   <input type="text" id="editClient" placeholder="Client (GP/ROBI/BL)" class="inp">
+   <textarea id="editKey" placeholder="Key / Notes Info..." class="inp"></textarea>
+  </div>
+  <div class="mf"><button id="saveBtn" onclick="updateMasterData()" class="btn btn-p">Save Record</button><button onclick="toggleForm('hide')" class="btn">Cancel</button></div>
+ </div>
+</div>
+
+<script>
+// ====== CONFIG: apiKey ta Firebase Console > Project settings > Your apps theke paste korun ======
+const CONFIG = {
+    API_BASE: "https://link-edge.onrender.com",
+    firebase: {
+        apiKey: "PASTE_YOUR_WEB_API_KEY",
+        authDomain: "phoenixdatabase-v1.firebaseapp.com",
+        projectId: "phoenixdatabase-v1",
+        databaseURL: "https://phoenixdatabase-v1-default-rtdb.firebaseio.com/"
+    }
+};
+firebase.initializeApp(CONFIG.firebase);
+const db = firebase.database();
+const auth = firebase.auth();
+const $ = (id) => document.getElementById(id);
+
+let masterData = [];
+let keysData = {};
+let filterTimeout;
+let listening = false;
+let viewIdx = -1;
 
         function safeKey(s) {
             return String(s || '')
@@ -654,111 +358,95 @@
                 (qi && masterIds[i].some(m => m.num === qi.num && (!m.reg || !qi.reg || m.reg === qi.reg) && typOk(m.typ, qi.typ)));
         }
 
-        function verifyAccess() {
-            const u = document.getElementById('userIn').value.trim().toLowerCase();
-            const p = document.getElementById('passIn').value.trim();
-            const err = document.getElementById('authError');
-            
-            const auth1 = (u === atob(_0x4f22[0]).toLowerCase() && p === atob(_0x4f22[1]));
-            const auth2 = (u === atob(_0x4f22[2]).toLowerCase() && p === atob(_0x4f22[3]));
 
-            if (auth1 || auth2) {
-                document.getElementById('loginGate').style.display = 'none';
-                document.getElementById('mainApp').style.display = 'block';
-                sessionStorage.setItem('phoenix_auth', 'active');
-            } else {
-                err.style.display = 'block';
-                setTimeout(() => err.style.display = 'none', 3000);
-            }
+// ---------- Auth (Master PIN -> server -> Firebase custom token) ----------
+async function api(path, opts) {
+    const c = new AbortController();
+    const t = setTimeout(() => c.abort(), 45000);
+    try { return await fetch(CONFIG.API_BASE + path, { ...opts, signal: c.signal }); }
+    finally { clearTimeout(t); }
+}
+const JSON_H = { 'Content-Type': 'application/json' };
+
+async function verifyAccess() {
+    const pin = $('pinIn').value.trim();
+    if (!pin) return;
+    const err = $('authError'), btn = $('authBtn');
+    btn.disabled = true; btn.textContent = 'Connecting...';
+    try {
+        const r = await api('/auth/pin', { method: 'POST', headers: JSON_H, body: JSON.stringify({ pin }) });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok || !j.token) throw new Error(r.status === 429 ? 'Too many attempts. Try again later.' : r.status === 401 ? 'Wrong PIN' : 'Server error');
+        await auth.signInWithCustomToken(j.token);
+        $('pinIn').value = '';
+    } catch (e) {
+        err.textContent = e.name === 'AbortError' ? 'Server timeout. Try again.' : (e.message || 'Failed');
+        err.style.display = 'block';
+        setTimeout(() => err.style.display = 'none', 3500);
+    } finally { btn.disabled = false; btn.textContent = 'Unlock'; }
+}
+
+async function askPin(label) {
+    const pin = prompt('Enter Master PIN to ' + label + ':');
+    if (pin === null) return false;
+    try {
+        const r = await api('/auth/pin', { method: 'POST', headers: JSON_H, body: JSON.stringify({ pin: pin.trim(), check: true }) });
+        if (r.ok) return true;
+        alert(r.status === 429 ? 'Too many attempts. Try later.' : 'Invalid PIN.');
+    } catch (e) { alert('Server not reachable.'); }
+    return false;
+}
+
+function logout() {
+    if (confirm('Are you sure you want to logout?')) auth.signOut();
+}
+
+function startListeners() {
+    db.ref('professor_master_db').on('value', (s) => { masterData = toArray(s.val()); refreshUI_Internal(); },
+        (e) => alert('❌ Firebase read error (master): ' + e.message));
+    db.ref('professor_keys_db').on('value', (s) => { keysData = s.val() || {}; refreshUI_Internal(); },
+        (e) => alert('❌ Firebase read error (keys): ' + e.message));
+}
+
+auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {}).then(() => {
+    auth.onAuthStateChanged((u) => {
+        $('loginGate').style.display = u ? 'none' : 'flex';
+        $('app').style.display = u ? 'flex' : 'none';
+        if (u && !listening) { listening = true; startListeners(); }
+        if (!u && listening) {
+            db.ref('professor_master_db').off(); db.ref('professor_keys_db').off();
+            listening = false; masterData = []; keysData = {};
         }
+    });
+});
 
-        function logout() {
-            if(confirm("Are you sure you want to logout?")) {
-                sessionStorage.removeItem('phoenix_auth');
-                location.reload();
-            }
-        }
+// ---------- Navigation / theme ----------
+const TITLES = { dash: 'Dashboard', sites: 'Sites', data: 'Data Tools', set: 'Settings' };
+function showPage(p) {
+    document.querySelectorAll('.page').forEach(e => e.classList.toggle('active', e.id === 'pg-' + p));
+    document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('active', b.dataset.p === p));
+    $('pageTitle').textContent = TITLES[p];
+    closeNav(); window.scrollTo(0, 0);
+}
+function openNav() { $('side').classList.add('open'); $('overlay').classList.add('open'); }
+function closeNav() { $('side').classList.remove('open'); $('overlay').classList.remove('open'); }
 
-        const canvas = document.getElementById('canvasBg');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-        
-        function initCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            particles = [];
-            for(let i=0; i<60; i++) {
-                particles.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, vx: (Math.random() - 0.5) * 1.5, vy: (Math.random() - 0.5) * 1.5 });
-            }
-        }
+function toggleTheme() {
+    const next = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.body.setAttribute('data-theme', next);
+    try { localStorage.setItem('phoenix_theme', next); } catch (_) {}
+    updateThemeIcon(next);
+}
+function updateThemeIcon(t) { $('themeIcon').className = t === 'dark' ? 'fas fa-sun' : 'fas fa-moon'; }
+(function () {
+    let t = 'dark'; try { t = localStorage.getItem('phoenix_theme') || 'dark'; } catch (_) {}
+    document.body.setAttribute('data-theme', t); updateThemeIcon(t);
+})();
 
-        function animate() {
-            if (document.getElementById('loginGate').style.display !== 'none') {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#6366f1';
-                particles.forEach(p => {
-                    p.x += p.vx; p.y += p.vy;
-                    if(p.x < 0 || p.x > canvas.width) p.vx *= -1;
-                    if(p.y < 0 || p.y > canvas.height) p.vy *= -1;
-                    ctx.beginPath(); ctx.arc(p.x, p.y, 1.5, 0, Math.PI*2); ctx.fill();
-                    particles.forEach(p2 => {
-                        let dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-                        if(dist < 90) {
-                            ctx.strokeStyle = `rgba(99, 102, 241, ${0.8 - dist/90})`;
-                            ctx.lineWidth = 0.4;
-                            ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
-                        }
-                    });
-                });
-            }
-            requestAnimationFrame(animate);
-        }
-        window.addEventListener('resize', initCanvas);
-        initCanvas(); animate();
-
-        let masterData = [];
-        let keysData = {};
-        let filterTimeout;
-
-        const TG_TOKEN = '8582534427:AAHq4TfwFqBIy1wU9mp6bDNQGSeSD49yX94';
-        const TG_CHAT_ID = '682844989';
-
-        window.onload = () => {
-            if(sessionStorage.getItem('phoenix_auth') === 'active') {
-                document.getElementById('loginGate').style.display = 'none';
-                document.getElementById('mainApp').style.display = 'block';
-            }
-            const savedTheme = localStorage.getItem('phoenix_theme') || 'dark';
-            document.body.setAttribute('data-theme', savedTheme);
-            updateThemeIcon(savedTheme);
-
-            db.ref('professor_master_db').on('value', (snapshot) => {
-                masterData = toArray(snapshot.val());
-                refreshUI_Internal();
-            }, (err) => alert("❌ Firebase read error (master): " + err.message));
-
-            db.ref('professor_keys_db').on('value', (snapshot) => {
-                keysData = snapshot.val() || {};
-                refreshUI_Internal();
-            }, (err) => alert("❌ Firebase read error (keys): " + err.message));
-        };
-
-        function toggleTheme() {
-            const current = document.body.getAttribute('data-theme');
-            const next = current === 'dark' ? 'light' : 'dark';
-            document.body.setAttribute('data-theme', next);
-            localStorage.setItem('phoenix_theme', next);
-            updateThemeIcon(next);
-        }
-
-        function updateThemeIcon(theme) {
-            document.getElementById('themeIcon').className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-        }
-
-        function debounceFilter() {
-            clearTimeout(filterTimeout);
-            filterTimeout = setTimeout(handleFilter, 200);
-        }
+function debounceFilter() {
+    clearTimeout(filterTimeout);
+    filterTimeout = setTimeout(handleFilter, 200);
+}
 
         document.getElementById('fileInputData').addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -885,220 +573,185 @@
             e.target.value = '';
         });
 
-        function refreshUI_Internal() {
-            document.getElementById('statTime').innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            document.getElementById('statKeysCount').innerText = Object.keys(keysData).length;
-            updateAnalytics();
-            handleFilter();
-        }
+// ---------- UI render ----------
+function refreshUI_Internal() {
+    $('statTime').innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    $('statKeysCount').innerText = Object.keys(keysData).length;
+    updateAnalytics();
+    handleFilter();
+}
 
-        function updateAnalytics() {
-            const rows = masterData.slice(1);
-            const total = rows.length;
-            document.getElementById('statTotal').innerText = total;
-            const count = (str) => rows.filter(r => r && r[7]?.toString().toUpperCase().includes(str)).length;
-                    
-            const gp = count('GRAMEEN'), robi = count('ROBI'), bl = count('BANGLALINK');
-            document.getElementById('cntGP').innerText = gp;
-            document.getElementById('cntRobi').innerText = robi;
-            document.getElementById('cntBL').innerText = bl;
+function updateAnalytics() {
+    const rows = masterData.slice(1);
+    const total = rows.length;
+    $('statTotal').innerText = total;
+    const count = (s) => rows.filter(r => r && r[7]?.toString().toUpperCase().includes(s)).length;
+    const gp = count('GRAMEEN'), robi = count('ROBI'), bl = count('BANGLALINK');
+    $('cntGP').innerText = gp; $('cntRobi').innerText = robi; $('cntBL').innerText = bl;
+    $('barGP').style.width = total ? (gp / total * 100) + '%' : '0%';
+    $('barRobi').style.width = total ? (robi / total * 100) + '%' : '0%';
+    $('barBL').style.width = total ? (bl / total * 100) + '%' : '0%';
+}
 
-            document.getElementById('barGP').style.width = total ? (gp/total*100) + "%" : "0%";
-            document.getElementById('barRobi').style.width = total ? (robi/total*100) + "%" : "0%";
-            document.getElementById('barBL').style.width = total ? (bl/total*100) + "%" : "0%";
-        }
+const MAX_ROWS = 200;
+function getClientClass(c) {
+    c = c?.toString().toUpperCase() || '';
+    if (c.includes('GRAMEEN')) return 'tag-gp';
+    if (c.includes('ROBI')) return 'tag-robi';
+    if (c.includes('BANGLALINK')) return 'tag-bl';
+    return '';
+}
+const mapUrl = (r) => (r[5] && r[6] && r[5] !== '0' && r[6] !== '0')
+    ? `https://www.google.com/maps?q=${encodeURIComponent(r[5])},${encodeURIComponent(r[6])}` : null;
 
-        const MAX_ROWS = 200;
-        function handleFilter() {
-            ensureIndexes();
-            const tokens = document.getElementById('searchInput').value.trim().toUpperCase().split(/\s+/).filter(Boolean);
-            const tbody = document.getElementById('fullTable');
-            let html = '', shown = 0, total = 0;
-            const match = makeMatcher(tokens);
+function handleFilter() {
+    ensureIndexes();
+    const tokens = $('searchInput').value.trim().toUpperCase().split(/\s+/).filter(Boolean);
+    const match = makeMatcher(tokens);
+    let html = '', shown = 0, total = 0;
+    for (let i = 1; i < masterData.length; i++) {
+        const r = masterData[i];
+        if (!Array.isArray(r)) continue;
+        if (tokens.length && !match(i)) continue;
+        total++;
+        if (shown >= MAX_ROWS) continue;
+        shown++;
+        const name = r[0] ? r[0].toString().trim() : '';
+        const map = mapUrl(r);
+        const key = findKeyInfo(name) || (r[2] || '-');
+        html += `<tr>
+            <td class="id" data-label="SITE">${esc(name) || '-'}</td>
+            <td data-label="IP"><code class="ipc">${esc(r[1]) || '-'}</code></td>
+            <td data-label="MODEL"><span><span style="font-size:11px;opacity:.6;display:block">${esc(r[3]) || '-'}</span><b>${esc(r[4]) || '-'}</b></span></td>
+            <td data-label="LOCATION">${map ? `<a href="${map}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700"><i class="fas fa-map-marker-alt"></i> MAP</a>` : '<span style="opacity:.4">N/A</span>'}</td>
+            <td data-label="CLIENT"><span class="tag ${getClientClass(r[7])}">${esc(r[7]) || 'N/A'}</span></td>
+            <td data-label="KEY"><span class="key-text">${esc(key)}</span></td>
+            <td class="ac"><div class="acts"><button class="op v" onclick="viewSite(${i})"><i class="fas fa-eye"></i> VIEW</button><button class="op" onclick="quickEdit(${i})"><i class="fas fa-pen"></i> EDIT</button></div></td>
+        </tr>`;
+    }
+    if (total > shown) html += `<tr><td colspan="7" class="more">Showing ${shown} of ${total} - search kore narrow korun</td></tr>`;
+    if (!total) html = `<tr><td colspan="7" class="more">${masterData.length ? 'No match found' : 'No data'}</td></tr>`;
+    $('fullTable').innerHTML = html;
+}
 
-            for (let i = 1; i < masterData.length; i++) {
-                const r = masterData[i];
-                if (!Array.isArray(r)) continue;
-                if (tokens.length && !match(i)) continue;
-                total++;
-                if (shown >= MAX_ROWS) continue;
-                shown++;
+// ---------- View ----------
+function viewSite(i) {
+    const r = masterData[i] || [];
+    const name = (r[0] ?? '').toString().trim();
+    const key = findKeyInfo(name) || 'No key info available';
+    const map = mapUrl(r);
+    const F = [['Site', name], ['IP', r[1]], ['Client', r[7]], ['Sub-Center', r[2]], ['Node', r[3]], ['Model', r[4]]];
+    $('viewBody').innerHTML = F.map(([k, v]) => `<div class="kv"><span>${k}</span><b>${esc(v) || '-'}</b></div>`).join('')
+        + (map ? `<div class="kv"><span>Location</span><a href="${map}" target="_blank" rel="noopener"><i class="fas fa-map-marker-alt"></i> ${esc(r[5])}, ${esc(r[6])}</a></div>` : '')
+        + `<div class="kv full"><span>Key information</span><pre>${esc(key)}</pre></div>`;
+    viewIdx = i;
+    $('viewModal').classList.add('open');
+}
+function closeView() { $('viewModal').classList.remove('open'); }
+function editFromView() { const i = viewIdx; closeView(); quickEdit(i); }
+function copyIP() {
+    const ip = (masterData[viewIdx] || [])[1];
+    if (ip && navigator.clipboard) navigator.clipboard.writeText(String(ip)).then(() => alert('IP copied: ' + ip));
+}
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeView(); toggleForm('hide'); closeNav(); } });
 
-                const originalIndex = i;
-                const siteName = r[0] ? r[0].toString().trim() : '';
-                const mapLink = (r[5] && r[6] && r[5] !== "0" && r[6] !== "0") ? `https://www.google.com/maps?q=${encodeURIComponent(r[5])},${encodeURIComponent(r[6])}` : null;
-                const matchedKey = findKeyInfo(siteName) || (r[2] || '-');
+// ---------- Add / Edit ----------
+function toggleForm(mode) {
+    const s = $('editSection');
+    if (mode === 'hide') { s.classList.remove('open'); return; }
+    s.classList.add('open');
+    if (mode === 'add') {
+        $('formTitle').innerText = 'New System Entry';
+        s.querySelectorAll('.inp').forEach(i => i.value = '');
+    } else $('formTitle').innerText = 'Edit Record';
+}
 
-                html += `<tr>
-                    <td style="color:var(--primary); font-weight:700;">${esc(siteName) || '-'}</td>
-                    <td><code style="background:var(--input-bg); padding:4px 8px; border-radius:6px; font-family: monospace; font-weight:600;">${esc(r[1]) || '-'}</code></td>
-                    <td><div style="font-size:11px; opacity:0.6;">${esc(r[3]) || '-'}</div><b>${esc(r[4]) || '-'}</b></td>
-                    <td>
-                        ${mapLink ? `<a href="${mapLink}" target="_blank" rel="noopener" style="color:var(--primary); text-decoration:none; font-size:12px; font-weight:600;"><i class="fas fa-map-marker-alt"></i> MAP</a>` : '<span style="opacity:0.3; font-size:11px;">N/A</span>'}
-                    </td>
-                    <td><span class="client-tag ${getClientClass(r[7])}">${esc(r[7]) || 'N/A'}</span></td>
-                    <td><span class="key-text">${esc(matchedKey)}</span></td>
-                    <td style="text-align:center;">
-                        <button onclick="quickEdit(${originalIndex})" class="op-btn">EDIT</button>
-                    </td>
-                </tr>`;
-            }
-            if (total > shown) {
-                html += `<tr><td colspan="7" style="text-align:center; opacity:0.6; padding:14px;">Showing ${shown} of ${total} - search kore narrow korun</td></tr>`;
-            }
-            tbody.innerHTML = html;
-        }
+function quickEdit(index) {
+    const row = masterData[index] || [];
+    const name = row[0] || '';
+    $('editName').value = name;
+    $('editIP').value = row[1] || '';
+    $('editSub').value = row[2] || '';
+    $('editNode').value = row[3] || '';
+    $('editModel').value = row[4] || '';
+    $('editLat').value = row[5] || '';
+    $('editLong').value = row[6] || '';
+    $('editClient').value = row[7] || '';
+    $('editKey').value = findKeyInfo(name, true);
+    toggleForm('edit');
+}
 
-        function getClientClass(client) {
-            const c = client?.toString().toUpperCase() || '';
-            if(c.includes('GRAMEEN')) return 'tag-gp';
-            if(c.includes('ROBI')) return 'tag-robi';
-            if(c.includes('BANGLALINK')) return 'tag-bl';
-            return '';
-        }
+function updateMasterData() {
+    const name = $('editName').value.trim();
+    if (!name) return;
+    const newRow = [name, $('editIP').value, $('editSub').value, $('editNode').value,
+        $('editModel').value, $('editLat').value, $('editLong').value, $('editClient').value];
+    const keyText = $('editKey').value.trim();
+    const newKeys = { ...keysData };
+    if (keyText) newKeys[safeKey(name)] = keyText;
 
-        function toggleForm(mode) {
-            const section = document.getElementById('editSection');
-            if(mode === 'hide') { section.style.display = 'none'; return; }
-            section.style.display = 'block';
-            if (mode === 'add') {
-                document.getElementById('formTitle').innerText = 'NEW SYSTEM ENTRY';
-                document.querySelectorAll('#editSection .input-box').forEach(i => i.value = '');
-            } else {
-                document.getElementById('formTitle').innerText = 'EDIT RECORD';
-            }
-            window.scrollTo({top: 0, behavior: 'smooth'});
-        }
+    const newMaster = masterData.length ? [...masterData] : [["Site", "IP", "Sub-Center", "Node", "Model", "Lat", "Long", "Client"]];
+    const idx = newMaster.findIndex((r, i) => i > 0 && r && r[0]?.toString().trim().toUpperCase() === name.toUpperCase());
+    if (idx !== -1) newMaster[idx] = newRow; else newMaster.push(newRow);
 
-        function quickEdit(index) {
-            const row = masterData[index] || [];
-            const siteName = row[0] || '';
+    Promise.all([
+        db.ref('professor_keys_db').set(newKeys),
+        db.ref('professor_master_db').set(newMaster)
+    ]).then(() => {
+        keysData = newKeys; masterData = newMaster;
+        alert('✅ Record & Key Updated Successfully!');
+        toggleForm('hide'); refreshUI_Internal();
+    }).catch(err => alert('❌ Firebase Error: ' + err.message));
+}
 
-            document.getElementById('editName').value = siteName;
-            document.getElementById('editIP').value = row[1] || '';
-            document.getElementById('editSub').value = row[2] || '';
-            document.getElementById('editNode').value = row[3] || '';
-            document.getElementById('editModel').value = row[4] || '';
-            document.getElementById('editLat').value = row[5] || '';
-            document.getElementById('editLong').value = row[6] || '';
-            document.getElementById('editClient').value = row[7] || '';
-            document.getElementById('editKey').value = findKeyInfo(siteName, true);
+// ---------- Wipe / Export / Push ----------
+async function wipeData() {
+    if (!(await askPin('wipe Master Data'))) return;
+    if (confirm('Are you absolutely sure you want to wipe Master Data?'))
+        db.ref('professor_master_db').remove().then(() => { alert('✅ Master Data Wiped!'); location.reload(); })
+            .catch(err => alert('❌ Firebase Error: ' + err.message));
+}
+async function wipeKeyData() {
+    if (!(await askPin('wipe Key Data'))) return;
+    if (confirm('Are you absolutely sure you want to wipe Key Data?'))
+        db.ref('professor_keys_db').remove().then(() => { alert('✅ Key Data Wiped!'); location.reload(); })
+            .catch(err => alert('❌ Firebase Error: ' + err.message));
+}
+async function exportMaster() {
+    if (!(await askPin('export Master Data'))) return;
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(masterData), 'MasterData');
+    XLSX.writeFile(wb, 'Phoenix_Master_Backup.xlsx');
+}
+async function exportKeys() {
+    if (!(await askPin('export Key Data'))) return;
+    const arr = [["Site Name", "Key Info"]];
+    for (const k in keysData) arr.push([k, keysData[k]]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(arr), 'KeysData');
+    XLSX.writeFile(wb, 'Phoenix_Keys_Backup.xlsx');
+}
 
-            toggleForm('edit');
-        }
+// Telegram token ar browser e nei: file server e jay, server bot diye pathay
+async function pushToTelegram() {
+    if (!masterData.length) return;
+    const st = $('pushStatus');
+    st.textContent = 'Pushing...';
+    try {
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(masterData), 'MasterData');
+        const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const tok = await auth.currentUser.getIdToken();
+        const r = await api('/admin/push?sites=' + (masterData.length - 1), {
+            method: 'POST',
+            headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/octet-stream' },
+            body: new Blob([buf])
+        });
+        st.textContent = r.ok ? '✅ Push success' : '❌ Push failed';
+    } catch (e) { st.textContent = '❌ Push error'; }
+    setTimeout(() => st.textContent = '', 3000);
+}
 
-        function updateMasterData() {
-            const name = document.getElementById('editName').value.trim();
-            if(!name) return;
-
-            const newRow = [
-                name,
-                document.getElementById('editIP').value,
-                document.getElementById('editSub').value,
-                document.getElementById('editNode').value,
-                document.getElementById('editModel').value,
-                document.getElementById('editLat').value,
-                document.getElementById('editLong').value,
-                document.getElementById('editClient').value
-            ];
-
-            const keyText = document.getElementById('editKey').value.trim();
-            const sk = safeKey(name);
-            const newKeys = { ...keysData };
-            if (keyText) newKeys[sk] = keyText;
-
-            const newMaster = masterData.length ? [...masterData] : [["Site","IP","Sub-Center","Node","Model","Lat","Long","Client"]];
-            const idx = newMaster.findIndex((r, i) => i > 0 && r && r[0]?.toString().trim().toUpperCase() === name.toUpperCase());
-            if(idx !== -1) newMaster[idx] = newRow;
-            else newMaster.push(newRow);
-
-            Promise.all([
-                db.ref('professor_keys_db').set(newKeys),
-                db.ref('professor_master_db').set(newMaster)
-            ]).then(() => {
-                keysData = newKeys;
-                masterData = newMaster;
-                alert("✅ Record & Key Updated Successfully!");
-                toggleForm('hide');
-                refreshUI_Internal();
-            }).catch(err => alert("❌ Firebase Error: " + err.message));
-        }
-
-        function wipeData() { 
-            const pass = prompt("Enter Security Key to Wipe Master Data:");
-            if(pass === atob(_0x4f22[4])) {
-                if(confirm("Are you absolutely sure you want to wipe Master Data?")) { 
-                    db.ref('professor_master_db').remove()
-                        .then(() => { alert("✅ Master Data Wiped Successfully!"); location.reload(); })
-                        .catch(err => alert("❌ Firebase Error: " + err.message));
-                }
-            } else if (pass !== null) {
-                alert("Invalid Security Key.");
-            }
-        }
-
-        function wipeKeyData() { 
-            const pass = prompt("Enter Security Key to Wipe Key Data:");
-            if(pass === atob(_0x4f22[4])) {
-                if(confirm("Are you absolutely sure you want to wipe Key Data?")) { 
-                    db.ref('professor_keys_db').remove()
-                        .then(() => { alert("✅ Key Data Wiped Successfully!"); location.reload(); })
-                        .catch(err => alert("❌ Firebase Error: " + err.message));
-                }
-            } else if (pass !== null) {
-                alert("Invalid Security Key.");
-            }
-        }
-
-        function exportMaster() {
-            const pass = prompt("Enter Security Key to Export Master Data:");
-            if(pass === atob(_0x4f22[4])) {
-                const ws = XLSX.utils.aoa_to_sheet(masterData);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "MasterData");
-                XLSX.writeFile(wb, "Phoenix_Master_Backup.xlsx");
-            } else if (pass !== null) {
-                alert("Invalid Security Key.");
-            }
-        }
-
-        function exportKeys() {
-            const pass = prompt("Enter Security Key to Export Key Data:");
-            if(pass === atob(_0x4f22[4])) {
-                let keyArray = [["Site Name", "Key Info"]];
-                for(let k in keysData) {
-                    keyArray.push([k, keysData[k]]);
-                }
-                const ws = XLSX.utils.aoa_to_sheet(keyArray);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "KeysData");
-                XLSX.writeFile(wb, "Phoenix_Keys_Backup.xlsx");
-            } else if (pass !== null) {
-                alert("Invalid Security Key.");
-            }
-        }
-
-        async function pushToTelegram() {
-            if(masterData.length === 0) return;
-            const status = document.querySelector('.status-badge');
-            const original = status.innerHTML;
-            status.innerHTML = `<i class="fas fa-sync fa-spin"></i> Pushing...`;
-            try {
-                const ws = XLSX.utils.aoa_to_sheet(masterData);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "MasterData");
-                const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-                const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                const formData = new FormData();
-                formData.append('chat_id', TG_CHAT_ID);
-                formData.append('document', blob, `Phoenix_Master_Backup.xlsx`);
-                formData.append('caption', `📊 PHOENIX MASTER BACKUP\n🌐 Sites: ${masterData.length - 1}`);
-                const response = await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendDocument`, { method: 'POST', body: formData });
-                if(response.ok) status.innerHTML = `<i class="fas fa-check"></i> Push Success!`;
-                else status.innerHTML = `Push Failed.`;
-            } catch (err) { status.innerHTML = `Push Error.`; }
-            finally { setTimeout(() => status.innerHTML = original, 2000); }
-        }
-    </script>
+</script>
 </body>
 </html>

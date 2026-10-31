@@ -3,6 +3,7 @@ const admin = require('firebase-admin');
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
+const crypto = require('crypto');
 
 console.log("🛠 Data getting to server...");
 
@@ -55,7 +56,7 @@ if (!/^\d{6,}:[A-Za-z0-9_-]{30,}$/.test(BOT_TOKEN)) {
 console.log("🔑 BOT_TOKEN loaded (id: " + BOT_TOKEN.split(':')[0] + ")");
 
 const bot = new Telegraf(BOT_TOKEN);
-const BOT_VERSION = 'v3.7-token-fix';
+const BOT_VERSION = 'v3.8-pin-auth';
 console.log("🤖 Phoenix Bot version: " + BOT_VERSION);
 
 // =====================================================================
@@ -343,10 +344,81 @@ bot.on('text', async (ctx) => {
 
 bot.catch((err) => console.error("Bot handler error:", err.message));
 
-// ---------- Keep-alive server ----------
-const server = http.createServer((req, res) => {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Phoenix Dual-DB Bot is Running Perfectly');
+// ---------- Keep-alive + secure web API ----------
+// Master PIN server e thake (env: MASTER_PIN). Browser e PIN lekha nei.
+const MASTER_PIN = String(process.env.MASTER_PIN || '787898');
+const TG_CHAT_ID = process.env.TG_CHAT_ID || '682844989';
+const ADMIN_UID = 'phoenix-admin';
+const sha = (x) => crypto.createHash('sha256').update(String(x)).digest();
+const pinOk = (p) => crypto.timingSafeEqual(sha(p), sha(MASTER_PIN));
+
+// Brute-force rokha: 5 bar vul PIN -> 15 min lock (IP wise)
+const fails = new Map();
+const MAX_FAILS = 5, LOCK_MS = 15 * 60 * 1000;
+const clientIp = (req) => String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+const isLocked = (ip) => { const f = fails.get(ip); return !!(f && f.until && f.until > Date.now()); };
+function noteFail(ip) {
+    const f = fails.get(ip) || { n: 0, until: 0 };
+    if (f.until && f.until <= Date.now()) { f.n = 0; f.until = 0; }
+    f.n++;
+    if (f.n >= MAX_FAILS) { f.until = Date.now() + LOCK_MS; f.n = 0; }
+    fails.set(ip, f);
+}
+setInterval(() => { const t = Date.now(); for (const [k, f] of fails) if (!f.until && f.n === 0 || (f.until && f.until < t)) fails.delete(k); }, 600000);
+
+function readBody(req, limit) {
+    return new Promise((resolve, reject) => {
+        const chunks = []; let size = 0;
+        req.on('data', (c) => {
+            size += c.length;
+            if (size > limit) { reject(new Error('too large')); req.destroy(); return; }
+            chunks.push(c);
+        });
+        req.on('end', () => resolve(Buffer.concat(chunks)));
+        req.on('error', reject);
+    });
+}
+const sendJson = (res, code, obj) => { res.writeHead(code, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); };
+
+const server = http.createServer(async (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
+
+    const u = new URL(req.url || '/', 'http://localhost');
+    try {
+        if (req.method === 'POST' && u.pathname === '/auth/pin') {
+            const ip = clientIp(req);
+            if (isLocked(ip)) return sendJson(res, 429, { error: 'locked' });
+            let body = {};
+            try { body = JSON.parse((await readBody(req, 2000)).toString() || '{}'); } catch (_) {}
+            if (!body.pin || !pinOk(String(body.pin).trim())) { noteFail(ip); return sendJson(res, 401, { error: 'wrong pin' }); }
+            fails.delete(ip);
+            if (body.check) return sendJson(res, 200, { ok: true });
+            const token = await admin.auth().createCustomToken(ADMIN_UID);
+            return sendJson(res, 200, { token });
+        }
+
+        if (req.method === 'POST' && u.pathname === '/admin/push') {
+            const m = /^Bearer (.+)$/.exec(req.headers.authorization || '');
+            let dec = null;
+            try { dec = m ? await admin.auth().verifyIdToken(m[1]) : null; } catch (_) {}
+            if (!dec || dec.uid !== ADMIN_UID) return sendJson(res, 401, { error: 'unauthorized' });
+            const buf = await readBody(req, 10 * 1024 * 1024);
+            if (!buf.length) return sendJson(res, 400, { error: 'empty' });
+            const sites = String(u.searchParams.get('sites') || '').replace(/\D/g, '').slice(0, 7);
+            await bot.telegram.sendDocument(TG_CHAT_ID, { source: buf, filename: 'Phoenix_Master_Backup.xlsx' },
+                { caption: `📊 PHOENIX MASTER BACKUP\n🌐 Sites: ${sites || '?'}` });
+            return sendJson(res, 200, { ok: true });
+        }
+
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('Phoenix Dual-DB Bot is Running Perfectly');
+    } catch (e) {
+        console.error('HTTP error:', e.message);
+        if (!res.headersSent) sendJson(res, 500, { error: 'server error' }); else res.end();
+    }
 });
 
 const PORT = process.env.PORT || 3000;
