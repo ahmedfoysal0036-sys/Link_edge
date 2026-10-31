@@ -56,7 +56,7 @@ if (!/^\d{6,}:[A-Za-z0-9_-]{30,}$/.test(BOT_TOKEN)) {
 console.log("🔑 BOT_TOKEN loaded (id: " + BOT_TOKEN.split(':')[0] + ")");
 
 const bot = new Telegraf(BOT_TOKEN);
-const BOT_VERSION = 'v3.8-pin-auth';
+const BOT_VERSION = 'v3.9-roles';
 console.log("🤖 Phoenix Bot version: " + BOT_VERSION);
 
 // =====================================================================
@@ -348,9 +348,47 @@ bot.catch((err) => console.error("Bot handler error:", err.message));
 // Master PIN server e thake (env: MASTER_PIN). Browser e PIN lekha nei.
 const MASTER_PIN = String(process.env.MASTER_PIN || '787898');
 const TG_CHAT_ID = process.env.TG_CHAT_ID || '682844989';
-const ADMIN_UID = 'phoenix-admin';
+const UIDS = { admin: 'phoenix-admin', user: 'phoenix-user' };
 const sha = (x) => crypto.createHash('sha256').update(String(x)).digest();
 const pinOk = (p) => crypto.timingSafeEqual(sha(p), sha(MASTER_PIN));
+
+// ---------- PIN store: Firebase app_config/pins (shudhu hash, client access bondho) ----------
+// MASTER_PIN (env) shob somoy Admin PIN hishebe kaj kore = recovery PIN.
+const scrypt = (pin, salt) => new Promise((ok, no) => crypto.scrypt(String(pin), salt, 32, (e, k) => (e ? no(e) : ok(k))));
+async function hashPin(pin) {
+    const salt = crypto.randomBytes(16);
+    const hash = await scrypt(pin, salt);
+    return { salt: salt.toString('base64'), hash: hash.toString('base64') };
+}
+async function checkHash(pin, rec) {
+    if (!rec || !rec.salt || !rec.hash) return false;
+    try {
+        const got = await scrypt(pin, Buffer.from(rec.salt, 'base64'));
+        const want = Buffer.from(rec.hash, 'base64');
+        return got.length === want.length && crypto.timingSafeEqual(got, want);
+    } catch (_) { return false; }
+}
+// PIN dekhe role ber kore: 'admin' | 'user' | null
+async function roleForPin(pin) {
+    pin = String(pin || '').trim();
+    if (!pin) return null;
+    let pins = {};
+    try { pins = (await db.ref('app_config/pins').once('value')).val() || {}; }
+    catch (e) { console.error('PIN store read error:', e.message); }
+    if (pinOk(pin) || await checkHash(pin, pins.admin)) return 'admin';
+    if (await checkHash(pin, pins.user)) return 'user';
+    return null;
+}
+
+// ---------- Activity log (server theke: login, login_failed, pin_change, push) ----------
+async function logActivity(role, action, site, detail) {
+    try {
+        await db.ref('activity_log').push({
+            ts: admin.database.ServerValue.TIMESTAMP,
+            role, action, site: site || '', detail: String(detail || '').slice(0, 300)
+        });
+    } catch (e) { console.error('Log error:', e.message); }
+}
 
 // Brute-force rokha: 5 bar vul PIN -> 15 min lock (IP wise)
 const fails = new Map();
@@ -393,23 +431,48 @@ const server = http.createServer(async (req, res) => {
             if (isLocked(ip)) return sendJson(res, 429, { error: 'locked' });
             let body = {};
             try { body = JSON.parse((await readBody(req, 2000)).toString() || '{}'); } catch (_) {}
-            if (!body.pin || !pinOk(String(body.pin).trim())) { noteFail(ip); return sendJson(res, 401, { error: 'wrong pin' }); }
+            const role = body.pin ? await roleForPin(body.pin) : null;
+            if (!role) { noteFail(ip); logActivity('none', 'login_failed', '', ip); return sendJson(res, 401, { error: 'wrong pin' }); }
             fails.delete(ip);
-            if (body.check) return sendJson(res, 200, { ok: true });
-            const token = await admin.auth().createCustomToken(ADMIN_UID);
-            return sendJson(res, 200, { token });
+            if (body.check) return sendJson(res, 200, { ok: true, role });
+            const token = await admin.auth().createCustomToken(UIDS[role], { role });
+            logActivity(role, 'login', '', ip);
+            return sendJson(res, 200, { token, role });
         }
 
         if (req.method === 'POST' && u.pathname === '/admin/push') {
             const m = /^Bearer (.+)$/.exec(req.headers.authorization || '');
             let dec = null;
             try { dec = m ? await admin.auth().verifyIdToken(m[1]) : null; } catch (_) {}
-            if (!dec || dec.uid !== ADMIN_UID) return sendJson(res, 401, { error: 'unauthorized' });
+            if (!dec || dec.role !== 'admin') return sendJson(res, 401, { error: 'unauthorized' });
             const buf = await readBody(req, 10 * 1024 * 1024);
             if (!buf.length) return sendJson(res, 400, { error: 'empty' });
             const sites = String(u.searchParams.get('sites') || '').replace(/\D/g, '').slice(0, 7);
             await bot.telegram.sendDocument(TG_CHAT_ID, { source: buf, filename: 'Phoenix_Master_Backup.xlsx' },
                 { caption: `📊 PHOENIX MASTER BACKUP\n🌐 Sites: ${sites || '?'}` });
+            logActivity('admin', 'push', '', (sites || '?') + ' sites');
+            return sendJson(res, 200, { ok: true });
+        }
+
+        if (req.method === 'POST' && u.pathname === '/admin/change-pin') {
+            const ip = clientIp(req);
+            if (isLocked(ip)) return sendJson(res, 429, { error: 'locked' });
+            const m = /^Bearer (.+)$/.exec(req.headers.authorization || '');
+            let dec = null;
+            try { dec = m ? await admin.auth().verifyIdToken(m[1]) : null; } catch (_) {}
+            if (!dec || dec.role !== 'admin') return sendJson(res, 401, { error: 'unauthorized' });
+            let body = {};
+            try { body = JSON.parse((await readBody(req, 2000)).toString() || '{}'); } catch (_) {}
+            const target = body.target === 'user' ? 'user' : body.target === 'admin' ? 'admin' : null;
+            const newPin = String(body.newPin || '').trim();
+            if (!target) return sendJson(res, 400, { error: 'bad request' });
+            if (!/^\d{6}$/.test(newPin)) return sendJson(res, 400, { error: 'PIN 6 digit number hote hobe' });
+            if ((await roleForPin(body.currentPin)) !== 'admin') { noteFail(ip); return sendJson(res, 401, { error: 'Current Admin PIN thik na' }); }
+            fails.delete(ip);
+            const clash = await roleForPin(newPin);
+            if (clash && clash !== target) return sendJson(res, 409, { error: 'Ei PIN onno role e use hocche, onno PIN din' });
+            await db.ref('app_config/pins/' + target).set({ ...(await hashPin(newPin)), updatedAt: admin.database.ServerValue.TIMESTAMP });
+            logActivity('admin', 'pin_change', target, '');
             return sendJson(res, 200, { ok: true });
         }
 
