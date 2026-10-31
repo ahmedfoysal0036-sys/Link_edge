@@ -152,6 +152,9 @@ body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-r
   <h1>Phoenix Controller</h1>
   <p>Enter PIN to continue</p>
   <input type="password" id="pinIn" class="pin" inputmode="numeric" autocomplete="current-password" placeholder="••••••" oncontextmenu="return false;" onkeydown="if(event.key==='Enter')verifyAccess()">
+<!-- 🔽 এই বাটন এবং এরর মেসেজ ব্লকটি যোগ করা হয়েছে 🔽 -->
+  <button type="button" id="authBtn" class="btn btn-p" onclick="verifyAccess()">Unlock</button>
+  <div id="authError"></div>
   <div id="offHint">📴 Offline: last save kora data diye view-only mode e dhukte parben (age ekbar online login kora thakte hobe).</div>
  </div>
 </div>
