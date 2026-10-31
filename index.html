@@ -151,7 +151,7 @@ body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-r
   <div class="auth-logo"><img src="./bts-logo.jpg" alt="" onerror="this.replaceWith(Object.assign(document.createElement('i'),{className:'fas fa-shield-halved'}))"></div>
   <h1>Phoenix Controller</h1>
   <p>Enter PIN to continue</p>
-  <input type="password" id="pinIn" class="pin" inputmode="numeric" autocomplete="current-password" placeholder="••••••" onkeydown="if(event.key==='Enter')verifyAccess()">
+  <input type="password" id="pinIn" class="pin" inputmode="numeric" autocomplete="current-password" placeholder="••••••" oncontextmenu="return false;" onkeydown="if(event.key==='Enter')verifyAccess()">
   <button id="authBtn" class="btn btn-p" onclick="verifyAccess()">Unlock</button>
   <div id="authError"></div>
   <div id="offHint">📴 Offline: last save kora data diye view-only mode e dhukte parben (age ekbar online login kora thakte hobe).</div>
