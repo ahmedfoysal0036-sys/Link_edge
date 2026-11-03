@@ -199,14 +199,18 @@ td{padding:12px 14px;border-bottom:1px solid var(--hairline);vertical-align:midd
 .ko-row td.id{line-height:1.7}
 .modal{position:absolute;inset:0;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.46);z-index:90;padding:0}
 .modal.open{display:flex}
+.phone:has(.modal.open) .content{overflow:hidden}
 .sheet{
   background:var(--fill);border:1px solid var(--border);border-radius:28px 28px 0 0;width:100%;
-  max-height:88%;overflow:auto;padding:10px 20px 36px;animation:sheetUp .32s cubic-bezier(.32,.72,0,1)
+  max-height:88%;overflow:auto;overflow-anchor:none;padding:10px 20px 36px;animation:sheetUp .32s cubic-bezier(.32,.72,0,1)
 }
 .sheet::before{content:"";display:block;width:36px;height:5px;border-radius:99px;background:var(--muted);opacity:.45;margin:4px auto 14px}
 .sheet h3{font-size:20px;font-weight:700;letter-spacing:-.3px;margin-bottom:14px;text-align:center}
-#inputGrid{display:grid;grid-template-columns:1fr;gap:10px}
-textarea.inp{grid-column:1/-1;min-height:110px;resize:vertical}
+#editSection .sheet{display:flex;flex-direction:column;overflow:hidden;padding-bottom:18px}
+#editSection .sheet h3{flex:none}
+#inputGrid{display:grid;grid-template-columns:1fr;gap:10px;overflow:auto;min-height:0;flex:1;padding-bottom:4px;overflow-anchor:none;-webkit-overflow-scrolling:touch}
+textarea.inp{grid-column:1/-1;min-height:90px;max-height:160px;resize:vertical}
+#editSection .mf{flex:none;margin-top:12px;padding-top:8px;background:var(--fill)}
 .mf{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}.mf .btn{flex:1;min-width:90px;padding:13px}
 .kv{display:flex;justify-content:space-between;gap:16px;padding:13px 0;border-bottom:1px solid var(--hairline)}
 .kv span{color:var(--muted);flex:none}.kv b{text-align:right;word-break:break-word}.kv.full{display:block;border:0}
@@ -1387,6 +1391,16 @@ function copyData() {
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeView(); toggleForm('hide'); closeNav(); } });
 
 // ---------- Add / Edit ----------
+function resetEditScroll() {
+    const sheet = $('editSection') && $('editSection').querySelector('.sheet');
+    const grid = $('inputGrid');
+    const key = $('editKey');
+    const name = $('editName');
+    if (sheet) sheet.scrollTop = 0;
+    if (grid) grid.scrollTop = 0;
+    if (key) key.scrollTop = 0;
+    if (name) name.focus({ preventScroll: true });
+}
 function toggleForm(mode) {
     if (OFFLINE && mode !== 'hide') { alert('Offline mode e edit/add bondho'); return; }
     const s = $('editSection');
@@ -1397,6 +1411,8 @@ function toggleForm(mode) {
         s.querySelectorAll('.inp').forEach(i => i.value = '');
     } else $('formTitle').innerText = 'Edit Record';
     $('delBtn').style.display = editOrigName ? '' : 'none';
+    resetEditScroll();
+    requestAnimationFrame(resetEditScroll);
 }
 
 function quickEdit(index) {
