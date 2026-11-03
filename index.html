@@ -92,6 +92,8 @@ input,textarea,select{font:inherit;color:var(--text)}
 .mono,code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 .stage{min-height:100dvh;display:flex;flex-direction:column;background:var(--shell)}
 .phone{flex:1;min-height:0;width:100%;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column}
+/* mobile: stage ke screen er height e bandho, tahole .content nijei scroll kore ar modal/tabbar/fab screen e thake (na hole beshi row hole edit form screen er onek niche chole jay) */
+@media(max-width:979px){.stage{height:100vh;height:100dvh;min-height:0}}
 #loginGate{
   position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
   z-index:200;overflow:hidden;color:#fff;padding:24px
@@ -264,7 +266,7 @@ body[data-role=offline] .fab,body[data-role=user] .fab.admin-only{display:none!i
 @keyframes sheetUp{from{transform:translateY(40%)}to{transform:none}}
 @media(min-width:980px){
   .stage{padding:18px;background:var(--shell)}
-  .phone{max-width:1180px;width:100%;height:min(860px,calc(100dvh - 36px));margin:0 auto;border-radius:28px;border:1px solid var(--border);box-shadow:var(--shadow);flex-direction:row}
+  .phone{flex:none;max-width:1180px;width:100%;height:min(860px,calc(100dvh - 36px));margin:0 auto;border-radius:28px;border:1px solid var(--border);box-shadow:var(--shadow);flex-direction:row}
   #app{flex-direction:row}
   .side{display:flex}
   #menuBtn{display:none}
