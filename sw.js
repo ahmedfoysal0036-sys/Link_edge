@@ -1,4 +1,4 @@
-const V = 'phoenix-v5';
+const V = 'phoenix-v6';
 const SHELL = ['./', './index.html', './manifest.json', './apple-touch-icon.png', './icon-192.png', './icon-512.png', './bts-logo.jpg'];
 const CDN = [
   'https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js',

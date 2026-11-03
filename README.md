@@ -2,8 +2,8 @@
 
 BTS site data manager. Site, IP, client, location ar key info ek jaygay rakha, web app (iPhone/PC) ar Telegram bot dui vabei search kora jay.
 
-- **Web app:** `index.html` (V4.5), GitHub Pages e chole. Single file, vanilla JS, PWA (iPhone Safari).
-- **Server + Bot:** `index.js` (bot `v4.1-merge-keyonly`), Render e chole. Telegraf bot + HTTP API.
+- **Web app:** `index.html` (V4.7), GitHub Pages e chole. Single file, vanilla JS, PWA (iPhone Safari).
+- **Server + Bot:** `index.js` (bot `v4.7-notify-backup`), Render e chole. Telegraf bot + HTTP API.
 - **Database:** Firebase Realtime Database (project `phoenixdatabase-v1`).
 
 ## Repo file list
@@ -16,8 +16,8 @@ BTS site data manager. Site, IP, client, location ar key info ek jaygay rakha, w
 | `manifest.json` | PWA setting |
 | `icon-192.png`, `icon-512.png`, `apple-touch-icon.png`, `bts-logo.jpg` | Icon ar logo |
 | `package.json`, `package-lock.json` | Node dependency (`firebase-admin`, `telegraf`, `xlsx`) |
-| `firebase.json`, `_firebaserc` | Firebase setting (live site root `index.html` theke chole, `public/` folder use hoy na) |
-| `_gitignore` | GitHub e na jawa file list (`.env`, `node_modules` etc.) |
+| `firebase.json`, `.firebaserc` | Firebase setting (hosting root is this folder) |
+| `.gitignore` | GitHub e na jawa file list (`.env`, `node_modules` etc.) |
 
 ## Render Environment variables
 
@@ -94,7 +94,7 @@ Telegram bot e site code likhe pathan (jemon `GZP_B1234`). Result e site info ar
 3. `index.html` bodlale 1-2 min por `Ctrl+Shift+R`. iPhone PWA hole app bondho kore abar khulun.
 4. Firebase Rules bodlale Firebase Console > Realtime Database > Rules e **Publish**.
 
-Settings er niche "PHOENIX V4.5" dekhe version milan.
+Settings er niche "PHOENIX V4.7" dekhe version milan.
 
 ## Database paths
 
@@ -121,3 +121,4 @@ Ei structure bodlano jabe na.
 | V4.3 | User list + Block/Delete, name soho log, Copy Data, Push e Key file, `&amp;` fix |
 | V4.4 | Smart Merge import (Data + Key), key-only site |
 | V4.5 | Dashboard (health, recent login, last key update), 5 theme + fade |
+| V4.7 | Glass login, light dashboard, Remember me, user block/list, Push backup fix |

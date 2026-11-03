@@ -147,7 +147,7 @@ input,textarea,select{font:inherit;color:var(--text)}
 main{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;position:relative;overflow:hidden}
 .top{
   position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;
-  padding:calc(env(safe-area-inset-top) + 14px) 22px 12px;background:color-mix(in srgb,var(--bg) 86%,transparent)
+  padding:calc(env(safe-area-inset-top) + 14px) 22px 12px;background:var(--bg);background:color-mix(in srgb,var(--bg) 86%,transparent)
 }
 .top h2{font-size:26px;font-weight:700;letter-spacing:-.4px;flex:1;line-height:1.1}
 .ib{width:40px;height:40px;border-radius:12px;background:var(--card);display:grid;place-items:center;box-shadow:var(--shadow)}
@@ -386,7 +386,7 @@ body[data-role=offline] .fab,body[data-role=user] .fab.admin-only{display:none!i
      <div id="pushStatus" class="sec-s" style="margin:12px 0 0"></div>
     </div>
     <div class="card">
-     <div class="sec-t" style="color:var(--bad)">Danger zone</div><div class="sec-s">Master PIN Nedded, Permenet action</div>
+      <div class="sec-t" style="color:var(--bad)">Danger zone</div><div class="sec-s">Master PIN needed. Permanent action.</div>
      <div class="tools">
       <button class="btn btn-d" onclick="wipeData()"><i class="fas fa-trash"></i> Wipe Data</button>
       <button class="btn btn-d" onclick="wipeKeyData()"><i class="fas fa-key"></i> Wipe Key Data</button>
@@ -403,7 +403,7 @@ body[data-role=offline] .fab,body[data-role=user] .fab.admin-only{display:none!i
     <div class="card" style="margin-bottom:14px">
      <div class="sec-t">Session</div><div class="sec-s">Browser Auto logout</div>
      <button class="btn btn-d" onclick="logout()"><i class="fas fa-right-from-bracket"></i> Logout</button>
-     <button class="btn" onclick="clearOffline()" style="margin-left:8px"><i class="fas fa-eraser"></i> Offline data muchhe felo</button>
+      <button class="btn" onclick="clearOffline()" style="margin-left:8px"><i class="fas fa-eraser"></i> Clear offline data</button>
     </div>
     <div class="card" style="margin-bottom:14px">
      <div class="sec-t">Auto logout</div><div class="sec-s">Auto Log Out After</div>
@@ -472,7 +472,7 @@ body[data-role=offline] .fab,body[data-role=user] .fab.admin-only{display:none!i
  </div>
 </div>
 
-<div class="toast" id="idleToast"><span id="idleMsg"></span><button class="btn btn-p" type="button">Stay logged in</button></div>
+<div class="toast" id="idleToast"><span id="idleMsg"></span><button class="btn btn-p" type="button" onclick="bump()">Stay logged in</button></div>
 
 <div class="modal" id="viewModal" onclick="if(event.target===this)closeView()">
  <div class="sheet"><h3>Site Details</h3><div id="viewBody"></div>
@@ -678,12 +678,26 @@ async function api(path, opts) {
 }
 const JSON_H = { 'Content-Type': 'application/json' };
 
+const PIN_LS = 'phoenix_remember_pin';
+function rememberPin(pin) {
+    try {
+        if ($('rememberPin') && $('rememberPin').checked) localStorage.setItem(PIN_LS, pin);
+        else localStorage.removeItem(PIN_LS);
+    } catch (_) {}
+}
+(function loadRememberedPin() {
+    try {
+        const v = localStorage.getItem(PIN_LS);
+        if (v) { $('pinIn').value = v; if ($('rememberPin')) $('rememberPin').checked = true; }
+    } catch (_) {}
+})();
+
 async function verifyAccess() {
     const pin = $('pinIn').value.trim();
     if (!pin) return;
     const err = $('authError'), btn = $('authBtn');
     if (!navigator.onLine) {   // internet nai -> local saved data (PIN diye unlock)
-        if (await offlineUnlock(pin)) $('pinIn').value = ''; else loginNote('Wrong PIN, ba offline data nai');
+        if (await offlineUnlock(pin)) { rememberPin(pin); $('pinIn').value = ''; } else loginNote('Wrong PIN, ba offline data nai');
         return;
     }
     btn.disabled = true; btn.textContent = 'Logging in...';
@@ -693,10 +707,11 @@ async function verifyAccess() {
         if (!r.ok || !j.token) throw new Error(r.status === 429 ? 'Too many attempts. Try again later.' : r.status === 401 ? 'Wrong PIN' : r.status === 403 ? 'Apnar access block kora hoyeche' : 'Server error');
         await auth.signInWithCustomToken(j.token);
         await prepSnap(pin, j.role).catch(() => {});
+        rememberPin(pin);
         $('pinIn').value = '';
     } catch (e) {
         if ((e instanceof TypeError || e.name === 'AbortError') && await hasSnap() && confirm('Server pawa jachchhe na. Offline (view-only) mode e dhukben?')) {
-            if (await offlineUnlock(pin)) { $('pinIn').value = ''; return; }
+            if (await offlineUnlock(pin)) { rememberPin(pin); $('pinIn').value = ''; return; }
             loginNote('Wrong PIN'); return;
         }
         err.textContent = e.name === 'AbortError' ? 'Server timeout. Try again.' : (e.message || 'Failed');
@@ -860,7 +875,7 @@ async function loadUsers() {
         const j = await bkCall('/admin/users', { action: 'list' });
         box.innerHTML = (j.users || []).length ? j.users.map(u =>
             `<div class="logrow" style="grid-template-columns:1fr auto auto"><b>${esc(u.name)}</b><span><span class="tag ${u.role === 'admin' ? 'tag-gp' : ''}">${esc(u.role)}</span>${u.blocked ? ' <span class="tag tag-robi">BLOCKED</span>' : ''}</span><span class="acts"><button class="op" data-a="${u.blocked ? 'unblock' : 'block'}" data-k="${esc(u.key)}">${u.blocked ? 'Unblock' : 'Block'}</button><button class="op" style="color:var(--bad)" data-a="delete" data-k="${esc(u.key)}">Delete</button></span></div>`
-        ).join('') : '<div class="more">No user (Ahmed Faisal )</div>';
+        ).join('') : '<div class="more">No users yet</div>';
     } catch (e) { box.innerHTML = '<div class="more">User list load hoyni: ' + esc(e.message) + '</div>'; }
 }
 async function userAct(a, k) {
@@ -1292,7 +1307,7 @@ function handleFilter() {
             <td class="ac"><div class="acts"><button class="op v" onclick="viewSite(${i})"><i class="fas fa-eye"></i> VIEW</button><button class="op write-only" onclick="quickEdit(${i})"><i class="fas fa-pen"></i> EDIT</button></div></td>
         </tr>`;
     }
-    if (!Object.values(filt).some(Boolean)) {
+    if (koFilter || !Object.values(filt).some(Boolean)) {
         const qid = tokens.length === 1 ? parseIds(tokens[0]) : [];
         const qi = qid.length === 1 && qid[0].num.length >= 4 ? qid[0] : null;
         for (let j = 0; j < keyOnly.length; j++) {
