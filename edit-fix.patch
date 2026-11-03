@@ -1,0 +1,134 @@
+diff --git a/index.html b/index.html
+index 37dfa2e..be5b860 100644
+--- a/index.html
++++ b/index.html
+@@ -532,6 +532,8 @@ let listening = false;
+ let viewIdx = -1;
+ let ROLE = '';
+ let editOrigName = '';
++let editOrigKey = '';
++let saving = false;
+ let logCache = [];
+ let masterIsArr = true;
+ let OFFLINE = false;
+@@ -1416,7 +1418,7 @@ function toggleForm(mode) {
+     if (!s) return;
+     if (mode === 'hide') { s.classList.remove('open'); return; }
+     if (mode === 'add') {
+-        $('formTitle').innerText = 'New System Entry'; editOrigName = '';
++        $('formTitle').innerText = 'New System Entry'; editOrigName = ''; editOrigKey = '';
+         s.querySelectorAll('.inp').forEach(i => i.value = '');
+     } else $('formTitle').innerText = 'Edit Record';
+     $('delBtn').style.display = editOrigName ? '' : 'none';
+@@ -1438,7 +1440,8 @@ function quickEdit(index) {
+     $('editLat').value = row[5] || '';
+     $('editLong').value = row[6] || '';
+     $('editClient').value = row[7] || '';
+-    $('editKey').value = findKeyInfo(name, true);
++    editOrigKey = findKeyInfo(name, true);
++    $('editKey').value = editOrigKey;
+     toggleForm('edit');
+ }
+ 
+@@ -1461,42 +1464,85 @@ function findDup(name) {
+     return -1;
+ }
+ 
++function setSaveBusy(on) {
++    const b = $('saveBtn'); if (!b) return;
++    b.disabled = on; b.textContent = on ? 'Saving...' : 'Save Record';
++}
++
+ function updateMasterData() {
++    if (saving) return;
+     const name = $('editName').value.trim();
+-    if (!name) return;
+-    const newRow = [name, $('editIP').value, $('editSub').value, $('editNode').value,
+-        $('editModel').value, $('editLat').value, $('editLong').value, $('editClient').value];
++    if (!name) { alert('Site Name dewa lagbe'); return; }
++    const v = (id) => $(id).value.trim();
++    const newRow = [name, v('editIP'), v('editSub'), v('editNode'), v('editModel'), v('editLat'), v('editLong'), v('editClient')];
+     const keyText = $('editKey').value.trim();
+-
+-    if (!editOrigName) {   
++    const editing = !!editOrigName;
++
++    let idx = -1, oldRow = null;
++    if (editing) {
++        // original row ta purono naam diye khujbo (notun naam diye na), tahole rename korle notun row hoy na
++        const o = editOrigName.toUpperCase();
++        idx = masterData.findIndex((r, i) => i > 0 && Array.isArray(r) && s8(r[0]).toUpperCase() === o);
++        if (idx === -1) { alert('Ei site ta ar paoa jachchhe na (onno keu delete/rename korte pare). Abar khule try korun.'); toggleForm('hide'); return; }
++        oldRow = masterData[idx];
++        if (name.toUpperCase() !== o) {
++            const d = findDup(name);
++            if (d !== -1 && d !== idx) { alert('"' + s8(masterData[d][0]) + '" naame site already ache. Onno naam din.'); return; }
++        }
++    } else {
+         const d = findDup(name);
+         if (d !== -1) { showDup(d, newRow, keyText); return; }
+     }
+-    const idx = masterData.findIndex((r, i) => i > 0 && r && r[0]?.toString().trim().toUpperCase() === name.toUpperCase());
+-    const oldRow = idx !== -1 ? (masterData[idx] || []) : null;
++
++    const nameChanged = editing && name.toUpperCase() !== editOrigName.toUpperCase();
++    const baseKey = editing ? editOrigKey : findKeyInfo(name, true);
++    const keyChanged = keyText !== baseKey;
++    const delKey = editing && !nameChanged && !keyText && !!baseKey;          // key khali kore dile muche jabe
++    const writeKey = (keyText && (keyChanged || nameChanged)) ? keyText : '';  // key bodlale (ba rename hole) tobei likhbo
++
+     const changed = oldRow ? FIELD_L.map((l, i) => s8(oldRow[i]) !== s8(newRow[i]) ? l + ': ' + (s8(oldRow[i]) || '-') + ' → ' + (s8(newRow[i]) || '-') : '').filter(Boolean) : [];
+-    if (keyText && keyText !== findKeyInfo(name, true)) changed.push('Key');
+-    commitRow(idx, newRow, keyText, name, oldRow ? 'edit' : 'add', name,
+-        oldRow ? (changed.join(' | ').slice(0, 580) || 'no change') : ([s8(newRow[1]), s8(newRow[7]), keyText ? 'with key' : ''].filter(Boolean).join(' · ')));
++    if (writeKey) changed.push('Key');
++    if (delKey) changed.push('Key removed');
++    if (editing && !changed.length) { toggleForm('hide'); return; }   // kichu bodlayni
++
++    commitRow(idx, newRow, writeKey, name, editing ? 'edit' : 'add', name,
++        editing ? changed.join(' | ').slice(0, 580) : ([s8(newRow[1]), s8(newRow[7]), keyText ? 'with key' : ''].filter(Boolean).join(' · ')),
++        { delKey, keyName: editOrigName });
+ }
+ 
+-function commitRow(idx, newRow, keyText, keyName, act, site, detail) {
++function commitRow(idx, newRow, keyText, keyName, act, site, detail, opt) {
++    if (saving) return;
+     if (OFFLINE || !navigator.onLine) { alert('Offline: edit/add bondho. Internet ashle abar try korun.'); return; }
+     const newMaster = masterData.length ? [...masterData] : [HEAD8.slice()];
+     if (idx !== -1) newMaster[idx] = newRow; else newMaster.push(newRow);
+     let ops;
+-    if (masterIsArr && masterData.length) ops = [db.ref('professor_master_db/' + (idx !== -1 ? idx : masterData.length)).set(newRow)];   
++    if (masterIsArr && masterData.length) ops = [db.ref('professor_master_db/' + (idx !== -1 ? idx : masterData.length)).set(newRow)];
+     else if (ROLE === 'admin') ops = [db.ref('professor_master_db').set(newMaster)];
+     else { alert('Ekhon save kora jachchhe na, Admin ke jananu.'); return; }
+     const sk = safeKey(keyName);
+-    if (keyText) ops.push(db.ref('professor_keys_db/' + sk).set(keyText));   
++    const delSk = opt && opt.delKey ? safeKey(opt.keyName) : '';
++    if (keyText) ops.push(db.ref('professor_keys_db/' + sk).set(keyText));
++    if (delSk) ops.push(db.ref('professor_keys_db/' + delSk).remove());
++
++    saving = true; setSaveBusy(true);
++    let timedOut = false;
++    const release = () => { clearTimeout(tm); saving = false; setSaveBusy(false); };
++    // Firebase offline thakle promise atke thake; button jeno chirokal "Saving..." na thake
++    const tm = setTimeout(() => { timedOut = true; release(); alert('⏳ Save hote deri hochche. Internet check korun, connection ashle nije theke save hobe.'); }, 15000);
++
+     Promise.all(ops).then(() => {
+         masterData = newMaster;
+-        if (keyText) keysData = { ...keysData, [sk]: keyText };
++        let kd = keysData;
++        if (keyText) kd = { ...kd, [sk]: keyText };
++        if (delSk) { kd = { ...kd }; delete kd[delSk]; }
++        keysData = kd;
+         logAct(act, site, detail);
+-        alert('✅ Record & Key Updated Successfully!');
++        release();
++        if (timedOut) { refreshUI_Internal(); return; }
++        alert((keyText || delSk) ? '✅ Record & Key Updated Successfully!' : '✅ Record Updated Successfully!');
+         toggleForm('hide'); refreshUI_Internal();
+-    }).catch(err => alert('❌ Firebase Error: ' + err.message));
++        if (delSk && findKeyInfo(keyName, true)) alert('ℹ️ Ei site er nijer key muchhe geche, kintu onno naam/ID e rakha key ekhono dekhacche.');
++    }).catch(err => { release(); if (!timedOut) alert('❌ Firebase Error: ' + err.message); });
+ }
+ 
+ function showDup(i, newRow, keyText) {
