@@ -175,7 +175,7 @@ main{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;position
 .tools .btn{justify-content:flex-start;padding:14px 14px;border-radius:16px}
 .bar{display:flex;gap:10px;margin-bottom:12px;align-items:center}
 .sw{position:relative;flex:1}.sw i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)}
-.inp{width:100%;padding:12px 14px;border-radius:14px;border:0;background:var(--input);outline:0}
+.inp{width:100%;padding:12px 14px;border-radius:14px;border:0;background:var(--input);outline:0;font-size:16px}
 .inp:focus{box-shadow:0 0 0 3px var(--primary-s)}
 .sw .inp{padding-left:40px;height:44px;background:var(--input);border-radius:12px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border-radius:14px;font-weight:600;font-size:14px;background:var(--input);transition:.15s}
@@ -206,10 +206,13 @@ td{padding:12px 14px;border-bottom:1px solid var(--hairline);vertical-align:midd
 }
 .sheet::before{content:"";display:block;width:36px;height:5px;border-radius:99px;background:var(--muted);opacity:.45;margin:4px auto 14px}
 .sheet h3{font-size:20px;font-weight:700;letter-spacing:-.3px;margin-bottom:14px;text-align:center}
-#editSection .sheet{display:flex;flex-direction:column;overflow:hidden;padding-bottom:18px}
+#editSection .sheet{
+  height:88%;max-height:88%;min-height:72%;display:flex;flex-direction:column;
+  overflow:hidden;padding-bottom:18px
+}
 #editSection .sheet h3{flex:none}
-#inputGrid{display:grid;grid-template-columns:1fr;gap:10px;overflow:auto;min-height:0;flex:1;padding-bottom:4px;overflow-anchor:none;-webkit-overflow-scrolling:touch}
-textarea.inp{grid-column:1/-1;min-height:90px;max-height:160px;resize:vertical}
+#inputGrid{display:grid;grid-template-columns:1fr;gap:10px;overflow:auto;min-height:200px;flex:1;padding-bottom:4px;overflow-anchor:none;-webkit-overflow-scrolling:touch}
+textarea.inp{grid-column:1/-1;min-height:90px;max-height:140px;resize:vertical}
 #editSection .mf{flex:none;margin-top:12px;padding-top:8px;background:var(--fill)}
 .mf{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}.mf .btn{flex:1;min-width:90px;padding:13px}
 .kv{display:flex;justify-content:space-between;gap:16px;padding:13px 0;border-bottom:1px solid var(--hairline)}
@@ -272,6 +275,9 @@ body[data-role=offline] .fab,body[data-role=user] .fab.admin-only{display:none!i
   .lock-inner{max-width:430px}
   body.sites-on .fab.write-only{display:none}
   #pg-sites .bar .btn.write-only{display:inline-flex}
+  .modal{align-items:center;padding:18px}
+  .sheet{border-radius:24px;max-height:calc(100% - 24px)}
+  #editSection .sheet{height:80%;min-height:0;max-height:calc(100% - 24px)}
 }
 </style>
 </head>
@@ -935,7 +941,10 @@ function showPage(p) {
     document.querySelectorAll('.nav button, .tabbar button').forEach(b => b.classList.toggle('active', b.dataset.p === p));
     document.body.classList.toggle('sites-on', p === 'sites');
     $('pageTitle').textContent = TITLES[p];
-    closeNav(); window.scrollTo(0, 0);
+    closeNav();
+    const c = document.querySelector('.content');
+    if (c) c.scrollTop = 0;
+    window.scrollTo(0, 0);
     if (p === 'set') initSettings();
     if (p === 'dash') loadDashLogs(false);
     if (p === 'map') openMap();
@@ -1392,31 +1401,33 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeVie
 
 // ---------- Add / Edit ----------
 function resetEditScroll() {
-    const sheet = $('editSection') && $('editSection').querySelector('.sheet');
+    const box = $('editSection');
+    const sheet = box && box.querySelector('.sheet');
     const grid = $('inputGrid');
     const key = $('editKey');
-    const name = $('editName');
     if (sheet) sheet.scrollTop = 0;
     if (grid) grid.scrollTop = 0;
     if (key) key.scrollTop = 0;
-    if (name) name.focus({ preventScroll: true });
+    if (document.activeElement && box && box.contains(document.activeElement)) document.activeElement.blur();
 }
 function toggleForm(mode) {
     if (OFFLINE && mode !== 'hide') { alert('Offline mode e edit/add bondho'); return; }
     const s = $('editSection');
+    if (!s) return;
     if (mode === 'hide') { s.classList.remove('open'); return; }
-    s.classList.add('open');
     if (mode === 'add') {
         $('formTitle').innerText = 'New System Entry'; editOrigName = '';
         s.querySelectorAll('.inp').forEach(i => i.value = '');
     } else $('formTitle').innerText = 'Edit Record';
     $('delBtn').style.display = editOrigName ? '' : 'none';
+    s.classList.add('open');
     resetEditScroll();
-    requestAnimationFrame(resetEditScroll);
+    requestAnimationFrame(() => requestAnimationFrame(resetEditScroll));
 }
 
 function quickEdit(index) {
-    const row = masterData[index] || [];
+    const row = masterData[index];
+    if (!Array.isArray(row)) return;
     const name = row[0] || '';
     $('editName').value = name;
     editOrigName = String(name).trim();
