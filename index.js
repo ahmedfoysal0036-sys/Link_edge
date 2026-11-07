@@ -56,7 +56,11 @@ if (!/^\d{6,}:[A-Za-z0-9_-]{30,}$/.test(BOT_TOKEN)) {
 console.log("🔑 BOT_TOKEN loaded (id: " + BOT_TOKEN.split(':')[0] + ")");
 
 const bot = new Telegraf(BOT_TOKEN);
+<<<<<<< HEAD
 const BOT_VERSION = 'v4.7-notify-backup';
+=======
+const BOT_VERSION = 'v4.1-merge-keyonly';
+>>>>>>> c71f864 (Roll back to old version of local backup)
 console.log("🤖 Phoenix Bot version: " + BOT_VERSION);
 
 // =====================================================================
@@ -73,6 +77,7 @@ const safeKey = (s) =>
 const esc = (s) =>
     String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+const unesc = (s) => String(s ?? '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 const toArray = (v) => (Array.isArray(v) ? v : v && typeof v === 'object' ? Object.values(v) : []);
 
 const str = (v) => (v === undefined || v === null ? '' : v.toString().trim());
@@ -190,7 +195,45 @@ function searchRows(index, query) {
 // MATCHING CORE END
 // =====================================================================
 
+// ---------- Key-only: key ache kintu BTS data (master) e site nai ----------
+function buildKoIndex(keysObj, names) {
+    const full = new Set(), toks = new Set(), core = new Map(), num = new Map();
+    for (const n of names) {
+        if (!n) continue;
+        const sk = safeKey(n);
+        full.add(sk);
+        sk.split(/[^A-Z0-9]+/).forEach(t => { if (t.length >= 5) toks.add(t); });
+        for (const id of parseIds(n)) {
+            if (id.reg) addTo(core, id.reg + id.num, id);
+            if (id.num.length >= 4) addTo(num, id.num, id);
+        }
+    }
+    const groups = new Map();
+    for (const k of Object.keys(keysObj || {})) {
+        const v = valueToString(keysObj[k]);
+        if (!v) continue;
+        const sk = safeKey(k), ids = parseIds(k);
+        let hit = full.has(sk) || toks.has(sk);
+        if (!hit) for (const id of ids) {
+            if (id.reg && (core.get(id.reg + id.num) || []).some(m => typOk(id.typ, m.typ))) { hit = true; break; }
+            if (id.num.length >= 4 && (num.get(id.num) || []).some(m => (!id.reg || !m.reg) && typOk(id.typ, m.typ))) { hit = true; break; }
+        }
+        if (hit) continue;
+        const g = groups.get(v) || { name: k, names: [], v, ids: [] };
+        g.names.push(k); ids.forEach(i => g.ids.push(i));
+        groups.set(v, g);
+    }
+    // searchRows er entry shape e (row, name, ids, aliases, nameU, hay) + ko flag
+    return [...groups.values()].map(g => {
+        const aliases = new Set(g.names.map(safeKey));
+        g.ids.forEach(id => { aliases.add(idCode(id)); if (id.reg) aliases.add(id.reg + id.num); aliases.add(id.num); });
+        return { row: [], name: g.name, ids: g.ids, aliases, nameU: g.name.toUpperCase(), hay: [...aliases].join(' | '), ko: true, v: g.v };
+    }).sort((a, b) => a.name.localeCompare(b.name));
+}
+
 const state = {
+    koIndex: [],
+    keyVal: {},
     index: [],
     keyIdx: buildKeyIndex({}),
     keyCount: 0,
@@ -198,10 +241,16 @@ const state = {
     keysReady: false
 };
 
+function refreshKeyOnly() {
+    try { state.koIndex = buildKoIndex(state.keyVal, state.index.map(e => e.name)); }
+    catch (e) { console.error("Key-only index error:", e.message); }
+}
+
 db.ref('professor_master_db').on('value', (snap) => {
     try {
         state.index = buildMasterIndex(snap.val());
         state.masterReady = true;
+        refreshKeyOnly();
         console.log(`📦 Master synced: ${state.index.length} rows`);
     } catch (e) {
         console.error("Master index error:", e.message);
@@ -213,6 +262,8 @@ db.ref('professor_keys_db').on('value', (snap) => {
         const v = snap.val() || {};
         state.keyIdx = buildKeyIndex(v);
         state.keyCount = Object.keys(v).length;
+        state.keyVal = v;
+        refreshKeyOnly();
         state.keysReady = true;
         console.log(`🔑 Keys synced: ${state.keyCount} keys`);
     } catch (e) {
@@ -239,6 +290,7 @@ bot.command('version', async (ctx) => {
         `🤖 Bot version: ${BOT_VERSION}\n` +
         `📋 Sites in cache: ${state.index.length}\n` +
         `🔑 Total keys in DB: ${state.keyCount}\n` +
+        `🔗 Key-only (BTS data nai): ${state.koIndex.length}\n` +
         `✅ Ready: ${state.masterReady && state.keysReady ? 'yes' : 'loading...'}`
     );
 });
@@ -259,12 +311,12 @@ bot.on('text', async (ctx) => {
     if (!state.masterReady || !state.keysReady) {
         return ctx.reply('⏳ Database load hocche, 5-10 second por abar try korun.');
     }
-    if (state.index.length === 0) {
+    if (state.index.length === 0 && state.koIndex.length === 0) {
         return ctx.reply('❌ Master Database is empty.');
     }
 
     try {
-        const results = searchRows(state.index, query);
+        const results = searchRows(state.index, query).concat(searchRows(state.koIndex, query));
 
         if (results.length === 0) {
             return sendHtml(ctx, `❌ No match found for: <b>${esc(query)}</b>`);
@@ -274,7 +326,7 @@ bot.on('text', async (ctx) => {
         const header = `✅ <b>Found ${results.length} results</b>` +
             (results.length > MAX_RESULTS ? ` (showing top ${MAX_RESULTS})` : '') + `\n\n`;
 
-        const blocks = shownList.map(({ row: r, name }) => {
+        const blocks = shownList.map(({ row: r, name, ko, v: koVal }) => {
             const ip = str(r[1]) || '-';
             const subCenter = str(r[2]) || '-';
             const nodeAddr = str(r[3]) || '-';
@@ -286,11 +338,14 @@ bot.on('text', async (ctx) => {
             const mapLink = (lat !== '0' && long !== '0')
                 ? `https://www.google.com/maps?q=${encodeURIComponent(lat)},${encodeURIComponent(long)}` : null;
 
-            let keyInfo = lookupKeys(name, state.keyIdx) || 'No key info available';
+            let keyInfo = ko ? unesc(koVal) : unesc(lookupKeys(name, state.keyIdx) || 'No key info available');
             if (keyInfo.length > 900) keyInfo = keyInfo.slice(0, 900) + ' ...';
 
             let b = '';
-            if (isKeyOnly) {
+            if (ko) {
+                b += `📌 <b>Site:</b> ${esc(name) || '-'} ⚠️ <i>BTS data nai</i>\n`;
+                b += `<b>Key information:</b>\n<i>${esc(keyInfo)}</i>\n`;
+            } else if (isKeyOnly) {
                 b += `<b>Site name:</b> ${esc(name) || '-'}\n`;
                 b += `<b>Key information:</b>\n<i>${esc(keyInfo)}</i>\n`;
             } else {
@@ -331,13 +386,19 @@ bot.on('text', async (ctx) => {
 bot.catch((err) => console.error("Bot handler error:", err.message));
 
 // ---------- Keep-alive + secure web API ----------
+<<<<<<< HEAD
 if (!process.env.MASTER_PIN) {
     console.error("MASTER_PIN paoa jay nai.");
     process.exit(1);
 }
 const MASTER_PIN = String(process.env.MASTER_PIN);
+=======
+const MASTER_PIN = String(process.env.MASTER_PIN || '').trim();
+if (!MASTER_PIN) { console.error("❌ MASTER_PIN env set kora nai (Render > Environment e boshan)."); process.exit(1); }
+>>>>>>> c71f864 (Roll back to old version of local backup)
 const TG_CHAT_ID = process.env.TG_CHAT_ID || '682844989';
 const UIDS = { admin: 'phoenix-admin', user: 'phoenix-user' };
+const uidFor = (key) => 'u_' + String(key).slice(0, 100);
 const sha = (x) => crypto.createHash('sha256').update(String(x)).digest();
 const pinOk = (p) => crypto.timingSafeEqual(sha(p), sha(MASTER_PIN));
 
@@ -359,6 +420,7 @@ async function checkHash(pin, rec) {
 async function roleForPin(pin) {
     pin = String(pin || '').trim();
     if (!pin) return null;
+<<<<<<< HEAD
     if (pinOk(pin)) return { role: 'admin', name: 'Master Admin', blocked: false };
 
     let users = {};
@@ -369,16 +431,25 @@ async function roleForPin(pin) {
     for (const [uid, urec] of Object.entries(users)) {
         if (await checkHash(pin, urec)) {
             return { role: urec.role || 'user', name: urec.name || uid, blocked: !!urec.blocked, uid };
+=======
+    if (pinOk(pin)) return { role: 'admin', name: 'Master Admin', uid: UIDS.admin, master: true };
+    let users = {};
+    try { users = (await db.ref('app_config/users').once('value')).val() || {}; }
+    catch (e) { console.error('Users store read error:', e.message); }
+    for (const [key, urec] of Object.entries(users)) {
+        if (await checkHash(pin, urec)) {
+            return { role: urec.role === 'admin' ? 'admin' : 'user', name: urec.name || key, uid: uidFor(key), key, blocked: !!urec.blocked };
+>>>>>>> c71f864 (Roll back to old version of local backup)
         }
     }
     return null;
 }
 
-async function logActivity(role, action, site, detail) {
+async function logActivity(role, action, site, detail, name) {
     try {
         await db.ref('activity_log').push({
             ts: admin.database.ServerValue.TIMESTAMP,
-            role, action, site: site || '', detail: String(detail || '').slice(0, 300)
+            role, action, name: String(name || '').slice(0, 60), site: site || '', detail: String(detail || '').slice(0, 600)
         });
     } catch (e) { console.error('Log error:', e.message); }
 }
@@ -425,6 +496,7 @@ const server = http.createServer(async (req, res) => {
             try { body = JSON.parse((await readBody(req, 2000)).toString() || '{}'); } catch (_) {}
             
             const authResult = body.pin ? await roleForPin(body.pin) : null;
+<<<<<<< HEAD
             const role = authResult ? authResult.role : null;
             const userName = authResult ? authResult.name : '';
 
@@ -436,12 +508,23 @@ const server = http.createServer(async (req, res) => {
             if (authResult.blocked) {
                 logActivity(role, 'login_blocked', userName, ip);
                 return sendJson(res, 403, { error: 'blocked' });
+=======
+            if (!authResult) {
+                noteFail(ip);
+                logActivity('none', 'login_failed', '', ip);
+                return sendJson(res, 401, { error: 'wrong pin' });
+>>>>>>> c71f864 (Roll back to old version of local backup)
             }
+            if (authResult.blocked) {
+                logActivity('none', 'login_blocked', authResult.name, ip);
+                return sendJson(res, 403, { error: 'blocked' });
+            }
+            const { role, name: userName, uid } = authResult;
             fails.delete(ip);
             if (body.check) return sendJson(res, 200, { ok: true, role, userName });
-            
-            const token = await admin.auth().createCustomToken(UIDS[role] || 'phoenix-user', { role, name: userName });
-            logActivity(role, 'login', userName, ip);
+
+            const token = await admin.auth().createCustomToken(uid, { role, name: userName });
+            logActivity(role, 'login', '', ip, userName);
             return sendJson(res, 200, { token, role, userName });
         }
 
@@ -449,12 +532,13 @@ const server = http.createServer(async (req, res) => {
             const ip = clientIp(req);
             if (isLocked(ip)) return sendJson(res, 429, { error: 'locked' });
             const dec = await adminReq(req);
-            if (!dec || dec.role !== 'admin') return sendJson(res, 401, { error: 'unauthorized' });
-            
+            if (!dec) return sendJson(res, 401, { error: 'unauthorized' });
+
             let body = {};
             try { body = JSON.parse((await readBody(req, 2000)).toString() || '{}'); } catch (_) {}
             const { action, username, newPin, role, currentAdminPin } = body;
             const usersRef = db.ref('app_config/users');
+<<<<<<< HEAD
 
             if (action === 'list') {
                 const users = (await usersRef.once('value')).val() || {};
@@ -466,11 +550,25 @@ const server = http.createServer(async (req, res) => {
             }
 
             if ((await roleForPin(currentAdminPin))?.role !== 'admin') {
+=======
+            const byName = dec.name || 'admin';
+
+            if (action === 'list') {
+                const all = (await usersRef.once('value')).val() || {};
+                return sendJson(res, 200, { users: Object.entries(all).map(([k, v]) => ({
+                    key: k, name: v.name || k, role: v.role === 'admin' ? 'admin' : 'user',
+                    blocked: !!v.blocked, updatedAt: v.updatedAt || 0 })) });
+            }
+
+            const who = await roleForPin(currentAdminPin);
+            if (!who || who.role !== 'admin' || who.blocked) {
+>>>>>>> c71f864 (Roll back to old version of local backup)
                 noteFail(ip);
                 return sendJson(res, 401, { error: 'Current Admin PIN thik na' });
             }
             fails.delete(ip);
 
+<<<<<<< HEAD
             const safeUname = safeKey(username || '').toLowerCase();
             if (action === 'add') {
                 if (!username || !/^\d{6}$/.test(newPin)) return sendJson(res, 400, { error: 'Username ar 6-digit PIN din' });
@@ -488,14 +586,52 @@ const server = http.createServer(async (req, res) => {
                     role: role === 'admin' ? 'admin' : 'user',
                     blocked: !!prev.blocked,
                     ...hashed,
+=======
+            const ukey = safeKey(username).toLowerCase();
+            if (!username || !ukey) return sendJson(res, 400, { error: 'Username nai' });
+            const uid = uidFor(ukey);
+            const bref = db.ref('app_config/blocked/' + uid);
+            const revoke = () => admin.auth().revokeRefreshTokens(uid).catch(() => {});
+
+            if (action === 'add') {
+                if (!/^\d{6}$/.test(String(newPin || ''))) return sendJson(res, 400, { error: '6-digit PIN din' });
+                const clash = await roleForPin(newPin);
+                if (clash && clash.key !== ukey) return sendJson(res, 400, { error: 'Ei PIN onno karo ache, alada PIN din' });
+                const old = (await usersRef.child(ukey).once('value')).val();
+                const hashed = await hashPin(newPin);
+                await usersRef.child(ukey).set({
+                    name: username, role: role === 'admin' ? 'admin' : 'user', ...hashed,
+                    blocked: old ? !!old.blocked : false,
+>>>>>>> c71f864 (Roll back to old version of local backup)
                     updatedAt: admin.database.ServerValue.TIMESTAMP
                 });
-                logActivity('admin', 'user_add', username, role);
+                if (!old) await bref.remove();
+                else revoke();
+                logActivity('admin', 'user_add', username, (role === 'admin' ? 'admin' : 'user') + (old ? ' (PIN/role update)' : ' (new)'), byName);
                 return sendJson(res, 200, { ok: true });
+<<<<<<< HEAD
             } else if (action === 'delete') {
                 if (!username) return sendJson(res, 400, { error: 'Username nai' });
                 await usersRef.child(safeUname).remove();
                 logActivity('admin', 'user_delete', username, '');
+=======
+            }
+            if (action === 'block' || action === 'unblock') {
+                const rec = (await usersRef.child(ukey).once('value')).val();
+                if (!rec) return sendJson(res, 404, { error: 'User paoa jay nai' });
+                const b = action === 'block';
+                await usersRef.child(ukey).update({ blocked: b });
+                if (b) { await bref.set(true); revoke(); } else await bref.remove();
+                logActivity('admin', b ? 'user_block' : 'user_unblock', rec.name || username, '', byName);
+                return sendJson(res, 200, { ok: true });
+            }
+            if (action === 'delete') {
+                const rec = (await usersRef.child(ukey).once('value')).val();
+                if (!rec) return sendJson(res, 404, { error: 'User paoa jay nai' });
+                await usersRef.child(ukey).remove();
+                await bref.set(true); revoke();
+                logActivity('admin', 'user_delete', rec.name || username, rec.role || '', byName);
+>>>>>>> c71f864 (Roll back to old version of local backup)
                 return sendJson(res, 200, { ok: true });
             } else if (action === 'block' || action === 'unblock') {
                 if (!username) return sendJson(res, 400, { error: 'Username nai' });
@@ -509,6 +645,7 @@ const server = http.createServer(async (req, res) => {
         }
 
         if (req.method === 'POST' && u.pathname === '/admin/push') {
+<<<<<<< HEAD
             if (!(await adminReq(req))) return sendJson(res, 401, { error: 'unauthorized' });
             if (bkBusy) return sendJson(res, 409, { error: 'Backup cholche, kichukkhon por try korun' });
             bkBusy = true;
@@ -526,6 +663,20 @@ const server = http.createServer(async (req, res) => {
                 return sendJson(res, 200, { ok: true, status: st });
             } catch (e) { return sendJson(res, 500, { error: e.message }); }
             finally { bkBusy = false; }
+=======
+            const m = /^Bearer (.+)$/.exec(req.headers.authorization || '');
+            let dec = null;
+            try { dec = m ? await admin.auth().verifyIdToken(m[1]) : null; } catch (_) {}
+            if (!dec || dec.role !== 'admin') return sendJson(res, 401, { error: 'unauthorized' });
+            if (bkBusy) return sendJson(res, 409, { error: 'Backup cholche, kichukkhon por try korun' });
+            bkBusy = true;
+            try {
+                const st = await sendBackup('push');
+                logActivity('admin', 'push', '', st, dec.name);
+            } catch (e) { return sendJson(res, 500, { error: e.message }); }
+            finally { bkBusy = false; }
+            return sendJson(res, 200, { ok: true });
+>>>>>>> c71f864 (Roll back to old version of local backup)
         }
 
         if (req.method === 'POST' && (u.pathname === '/admin/backup-config' || u.pathname === '/admin/backup-now')) {
@@ -574,20 +725,23 @@ const tgSend = (html) => bot.telegram.sendMessage(TG_CHAT_ID, html, { parse_mode
 
 const NOTE_LABEL = { add: 'New site', edit: 'Edit', merge: 'Merge', delete: 'Delete', import_master: 'Import data', import_keys: 'Import keys', wipe_master: 'WIPE data', wipe_keys: 'WIPE keys', pin_change: 'PIN changed', user_add: 'User Added', user_delete: 'User Deleted' };
 const NOTE_ICON = { add: '➕', edit: '✏️', merge: '🔀', delete: '🗑', import_master: '📥', import_keys: '📥', wipe_master: '⚠️', wipe_keys: '⚠️', pin_change: '🔐', user_add: '👤', user_delete: '👤' };
+Object.assign(NOTE_LABEL, { user_block: 'User BLOCK', user_unblock: 'User unblock' });
+Object.assign(NOTE_ICON, { user_block: '⛔', user_unblock: '✅' });
 const BOOT_MS = Date.now();
 const seenLog = new Set();
 let noteQ = [], noteTimer = null;
 
 function noteText(l) {
-    const out = [`${NOTE_ICON[l.action] || '•'} <b>${esc(NOTE_LABEL[l.action] || l.action)}</b> · by <b>${esc(l.role)}</b>`];
+    const who = l.name ? `${l.name} (${l.role})` : l.role;
+    const out = [`${NOTE_ICON[l.action] || '🔔'} <b>${esc(NOTE_LABEL[l.action] || l.action)}</b>`, `👤 <b>${esc(who)}</b>`];
     if (l.site) out.push(`📌 ${esc(l.site)}`);
-    if (l.detail) out.push(`🔧 ${esc(l.detail)}`);
+    if (l.detail) out.push(`📝 ${esc(l.detail)}`);
     out.push(`🕒 ${dhakaWhen(l.ts)} (Dhaka)`);
     return out.join('\n');
 }
 function noteSummary(q) {
     const by = {};
-    q.forEach(l => { const k = (NOTE_LABEL[l.action] || l.action) + ' (' + l.role + ')'; by[k] = (by[k] || 0) + 1; });
+    q.forEach(l => { const k = (NOTE_LABEL[l.action] || l.action) + ' (' + (l.name || l.role) + ')'; by[k] = (by[k] || 0) + 1; });
     const sites = [...new Set(q.map(l => l.site).filter(Boolean))];
     return `📦 <b>${q.length} ta change</b>\n` +
         Object.entries(by).map(([k, n]) => `• ${esc(k)}: ${n}`).join('\n') +
@@ -639,7 +793,7 @@ async function makeBackup() {
 async function sendBackup(kind) {
     if (!XLSX) throw new Error('Server e xlsx package nai (npm install xlsx)');
     const b = await makeBackup(), d = dhakaDate();
-    const cap = `💾 PHOENIX ${kind === 'auto' ? 'AUTO' : 'MANUAL'} BACKUP\n📅 ${d}\n🌐 Sites: ${b.sites} · 🔑 Keys: ${b.nkeys}`;
+    const cap = `💾 PHOENIX ${kind === 'auto' ? 'AUTO' : kind === 'push' ? 'PUSH' : 'MANUAL'} BACKUP\n📅 ${d}\n🌐 Sites: ${b.sites} · 🔑 Keys: ${b.nkeys}`;
     await bot.telegram.sendDocument(TG_CHAT_ID, { source: b.master, filename: `Phoenix_Master_${d}.xlsx` }, { caption: cap });
     await bot.telegram.sendDocument(TG_CHAT_ID, { source: b.keys, filename: `Phoenix_Keys_${d}.xlsx` });
     return `ok (${b.sites} sites, ${b.nkeys} keys)`;
