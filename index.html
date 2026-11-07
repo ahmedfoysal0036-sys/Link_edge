@@ -295,7 +295,7 @@ body[data-role=offline] .fab,body[data-role=user] .fab.admin-only{display:none!i
   <input type="password" id="pinIn" class="pin" inputmode="numeric" maxlength="12" autocomplete="current-password" placeholder="Enter your PIN" oncontextmenu="return false;" onkeydown="if(event.key==='Enter')verifyAccess()">
   <div class="login-row">
    <label><input type="checkbox" id="rememberPin"> Remember me</label>
-   <span>Phoenix Controller</span>
+   <span>BTS Data HUB</span>
   </div>
   <button type="button" id="authBtn" class="btn btn-p" onclick="verifyAccess()">Log In</button>
   <div id="authError"></div>
@@ -306,7 +306,7 @@ body[data-role=offline] .fab,body[data-role=user] .fab.admin-only{display:none!i
 <div id="app">
  <div class="overlay" id="overlay" onclick="closeNav()"></div>
  <aside class="side" id="side">
-  <div class="brand"><div class="lg"><img src="./bts-logo.jpg" alt="" onerror="this.style.display='none'"></div><div>Phoenix<small>Controller</small></div></div>
+  <div class="brand"><div class="lg"><img src="./bts-logo.jpg" alt="" onerror="this.style.display='none'"></div><div>BTS Data<small>HUB</small></div></div>
   <nav class="nav">
    <button data-p="dash" onclick="showPage('dash')" class="active"><i class="fas fa-square-poll-vertical"></i>Dashboard</button>
    <button data-p="sites" onclick="showPage('sites')"><i class="fas fa-tower-cell"></i>Sites</button>
@@ -332,17 +332,19 @@ body[data-role=offline] .fab,body[data-role=user] .fab.admin-only{display:none!i
    <h2 id="pageTitle">Dashboard</h2>
    <span class="tag" id="roleTag"></span>
    <button class="ib" onclick="toggleTheme()" aria-label="Theme"><i class="fas fa-moon" id="themeIcon"></i></button>
-  </div>
-  <div class="content">
+ </div>
+ <div class="content">
    <section class="page active" id="pg-dash">
     <div class="grid3">
-     <div class="card stat"><span class="si"><i class="fas fa-tower"></i></span><h4>Total Sites</h4><p id="statTotal">0</p></div>
+     <div class="card stat"><span class="si"><i class="fas fa-broadcast-tower"></i></span><h4>Total Sites</h4><p id="statTotal">0</p></div>
      <div class="card stat"><span class="si"><i class="fas fa-key"></i></span><h4>Total Keys</h4><p id="statKeysCount">0</p><small id="statKoSub"></small></div>
      <div class="card stat"><span class="si"><i class="fas fa-clock"></i></span><h4>Last Sync</h4><p id="statTime" class="mono">--:--</p></div>
      <div class="card stat"><span class="si"><i class="fas fa-circle-exclamation"></i></span><h4>Key Not Found</h4><p id="statNoKey">0</p></div>
      <div class="card stat"><span class="si"><i class="fas fa-location-dot"></i></span><h4>Location Not Found</h4><p id="statNoLoc">0</p></div>
      <div class="card stat click" onclick="goKO()" title="Key-only site gulo dekhun"><span class="si"><i class="fas fa-link-slash"></i></span><h4>Key-only</h4><p id="statKO">0</p></div>
     </div>
+   </section>
+ </div>
     <div class="card">
      <div class="sec-t">Clients</div>
      <div id="clientBars"></div>
