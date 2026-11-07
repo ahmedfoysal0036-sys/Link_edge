@@ -56,11 +56,7 @@ if (!/^\d{6,}:[A-Za-z0-9_-]{30,}$/.test(BOT_TOKEN)) {
 console.log("🔑 BOT_TOKEN loaded (id: " + BOT_TOKEN.split(':')[0] + ")");
 
 const bot = new Telegraf(BOT_TOKEN);
-<<<<<<< HEAD
-const BOT_VERSION = 'v4.7-notify-backup';
-=======
 const BOT_VERSION = 'v4.1-merge-keyonly';
->>>>>>> c71f864 (Roll back to old version of local backup)
 console.log("🤖 Phoenix Bot version: " + BOT_VERSION);
 
 // =====================================================================
@@ -223,7 +219,6 @@ function buildKoIndex(keysObj, names) {
         g.names.push(k); ids.forEach(i => g.ids.push(i));
         groups.set(v, g);
     }
-    // searchRows er entry shape e (row, name, ids, aliases, nameU, hay) + ko flag
     return [...groups.values()].map(g => {
         const aliases = new Set(g.names.map(safeKey));
         g.ids.forEach(id => { aliases.add(idCode(id)); if (id.reg) aliases.add(id.reg + id.num); aliases.add(id.num); });
@@ -386,16 +381,8 @@ bot.on('text', async (ctx) => {
 bot.catch((err) => console.error("Bot handler error:", err.message));
 
 // ---------- Keep-alive + secure web API ----------
-<<<<<<< HEAD
-if (!process.env.MASTER_PIN) {
-    console.error("MASTER_PIN paoa jay nai.");
-    process.exit(1);
-}
-const MASTER_PIN = String(process.env.MASTER_PIN);
-=======
 const MASTER_PIN = String(process.env.MASTER_PIN || '').trim();
 if (!MASTER_PIN) { console.error("❌ MASTER_PIN env set kora nai (Render > Environment e boshan)."); process.exit(1); }
->>>>>>> c71f864 (Roll back to old version of local backup)
 const TG_CHAT_ID = process.env.TG_CHAT_ID || '682844989';
 const UIDS = { admin: 'phoenix-admin', user: 'phoenix-user' };
 const uidFor = (key) => 'u_' + String(key).slice(0, 100);
@@ -420,18 +407,6 @@ async function checkHash(pin, rec) {
 async function roleForPin(pin) {
     pin = String(pin || '').trim();
     if (!pin) return null;
-<<<<<<< HEAD
-    if (pinOk(pin)) return { role: 'admin', name: 'Master Admin', blocked: false };
-
-    let users = {};
-    try {
-        users = (await db.ref('app_config/users').once('value')).val() || {};
-    } catch (e) { console.error('Users store read error:', e.message); }
-
-    for (const [uid, urec] of Object.entries(users)) {
-        if (await checkHash(pin, urec)) {
-            return { role: urec.role || 'user', name: urec.name || uid, blocked: !!urec.blocked, uid };
-=======
     if (pinOk(pin)) return { role: 'admin', name: 'Master Admin', uid: UIDS.admin, master: true };
     let users = {};
     try { users = (await db.ref('app_config/users').once('value')).val() || {}; }
@@ -439,7 +414,6 @@ async function roleForPin(pin) {
     for (const [key, urec] of Object.entries(users)) {
         if (await checkHash(pin, urec)) {
             return { role: urec.role === 'admin' ? 'admin' : 'user', name: urec.name || key, uid: uidFor(key), key, blocked: !!urec.blocked };
->>>>>>> c71f864 (Roll back to old version of local backup)
         }
     }
     return null;
@@ -496,24 +470,10 @@ const server = http.createServer(async (req, res) => {
             try { body = JSON.parse((await readBody(req, 2000)).toString() || '{}'); } catch (_) {}
             
             const authResult = body.pin ? await roleForPin(body.pin) : null;
-<<<<<<< HEAD
-            const role = authResult ? authResult.role : null;
-            const userName = authResult ? authResult.name : '';
-
-            if (!role) {
-                noteFail(ip);
-                logActivity('none', 'login_failed', '', ip);
-                return sendJson(res, 401, { error: 'wrong pin' });
-            }
-            if (authResult.blocked) {
-                logActivity(role, 'login_blocked', userName, ip);
-                return sendJson(res, 403, { error: 'blocked' });
-=======
             if (!authResult) {
                 noteFail(ip);
                 logActivity('none', 'login_failed', '', ip);
                 return sendJson(res, 401, { error: 'wrong pin' });
->>>>>>> c71f864 (Roll back to old version of local backup)
             }
             if (authResult.blocked) {
                 logActivity('none', 'login_blocked', authResult.name, ip);
@@ -538,19 +498,6 @@ const server = http.createServer(async (req, res) => {
             try { body = JSON.parse((await readBody(req, 2000)).toString() || '{}'); } catch (_) {}
             const { action, username, newPin, role, currentAdminPin } = body;
             const usersRef = db.ref('app_config/users');
-<<<<<<< HEAD
-
-            if (action === 'list') {
-                const users = (await usersRef.once('value')).val() || {};
-                const out = Object.entries(users).map(([key, u]) => ({
-                    key, name: u.name || key, role: u.role || 'user', blocked: !!u.blocked
-                }));
-                out.sort((a, b) => String(a.name).localeCompare(String(b.name)));
-                return sendJson(res, 200, { users: out });
-            }
-
-            if ((await roleForPin(currentAdminPin))?.role !== 'admin') {
-=======
             const byName = dec.name || 'admin';
 
             if (action === 'list') {
@@ -562,31 +509,11 @@ const server = http.createServer(async (req, res) => {
 
             const who = await roleForPin(currentAdminPin);
             if (!who || who.role !== 'admin' || who.blocked) {
->>>>>>> c71f864 (Roll back to old version of local backup)
                 noteFail(ip);
                 return sendJson(res, 401, { error: 'Current Admin PIN thik na' });
             }
             fails.delete(ip);
 
-<<<<<<< HEAD
-            const safeUname = safeKey(username || '').toLowerCase();
-            if (action === 'add') {
-                if (!username || !/^\d{6}$/.test(newPin)) return sendJson(res, 400, { error: 'Username ar 6-digit PIN din' });
-                if (pinOk(newPin)) return sendJson(res, 400, { error: 'Master PIN er soman dewa jabe na' });
-                const users = (await usersRef.once('value')).val() || {};
-                for (const [uid, urec] of Object.entries(users)) {
-                    if (uid !== safeUname && await checkHash(newPin, urec)) {
-                        return sendJson(res, 400, { error: 'Ei PIN already use hocche' });
-                    }
-                }
-                const hashed = await hashPin(newPin);
-                const prev = users[safeUname] || {};
-                await usersRef.child(safeUname).set({
-                    name: username,
-                    role: role === 'admin' ? 'admin' : 'user',
-                    blocked: !!prev.blocked,
-                    ...hashed,
-=======
             const ukey = safeKey(username).toLowerCase();
             if (!username || !ukey) return sendJson(res, 400, { error: 'Username nai' });
             const uid = uidFor(ukey);
@@ -602,19 +529,12 @@ const server = http.createServer(async (req, res) => {
                 await usersRef.child(ukey).set({
                     name: username, role: role === 'admin' ? 'admin' : 'user', ...hashed,
                     blocked: old ? !!old.blocked : false,
->>>>>>> c71f864 (Roll back to old version of local backup)
                     updatedAt: admin.database.ServerValue.TIMESTAMP
                 });
                 if (!old) await bref.remove();
                 else revoke();
                 logActivity('admin', 'user_add', username, (role === 'admin' ? 'admin' : 'user') + (old ? ' (PIN/role update)' : ' (new)'), byName);
                 return sendJson(res, 200, { ok: true });
-<<<<<<< HEAD
-            } else if (action === 'delete') {
-                if (!username) return sendJson(res, 400, { error: 'Username nai' });
-                await usersRef.child(safeUname).remove();
-                logActivity('admin', 'user_delete', username, '');
-=======
             }
             if (action === 'block' || action === 'unblock') {
                 const rec = (await usersRef.child(ukey).once('value')).val();
@@ -631,39 +551,12 @@ const server = http.createServer(async (req, res) => {
                 await usersRef.child(ukey).remove();
                 await bref.set(true); revoke();
                 logActivity('admin', 'user_delete', rec.name || username, rec.role || '', byName);
->>>>>>> c71f864 (Roll back to old version of local backup)
-                return sendJson(res, 200, { ok: true });
-            } else if (action === 'block' || action === 'unblock') {
-                if (!username) return sendJson(res, 400, { error: 'Username nai' });
-                const rec = (await usersRef.child(safeUname).once('value')).val();
-                if (!rec) return sendJson(res, 404, { error: 'User paoa jay nai' });
-                await usersRef.child(safeUname).update({ blocked: action === 'block' });
-                logActivity('admin', action === 'block' ? 'user_block' : 'user_unblock', username, '');
                 return sendJson(res, 200, { ok: true });
             }
             return sendJson(res, 400, { error: 'bad request' });
         }
 
         if (req.method === 'POST' && u.pathname === '/admin/push') {
-<<<<<<< HEAD
-            if (!(await adminReq(req))) return sendJson(res, 401, { error: 'unauthorized' });
-            if (bkBusy) return sendJson(res, 409, { error: 'Backup cholche, kichukkhon por try korun' });
-            bkBusy = true;
-            try {
-                const buf = await readBody(req, 10 * 1024 * 1024);
-                if (buf.length) {
-                    const sites = String(u.searchParams.get('sites') || '').replace(/\D/g, '').slice(0, 7);
-                    await bot.telegram.sendDocument(TG_CHAT_ID, { source: buf, filename: 'Phoenix_Master_Backup.xlsx' },
-                        { caption: `PHOENIX MASTER BACKUP\nSites: ${sites || '?'}` });
-                    logActivity('admin', 'push', '', (sites || '?') + ' sites');
-                    return sendJson(res, 200, { ok: true });
-                }
-                const st = await sendBackup('manual');
-                logActivity('admin', 'push', '', st);
-                return sendJson(res, 200, { ok: true, status: st });
-            } catch (e) { return sendJson(res, 500, { error: e.message }); }
-            finally { bkBusy = false; }
-=======
             const m = /^Bearer (.+)$/.exec(req.headers.authorization || '');
             let dec = null;
             try { dec = m ? await admin.auth().verifyIdToken(m[1]) : null; } catch (_) {}
@@ -676,7 +569,6 @@ const server = http.createServer(async (req, res) => {
             } catch (e) { return sendJson(res, 500, { error: e.message }); }
             finally { bkBusy = false; }
             return sendJson(res, 200, { ok: true });
->>>>>>> c71f864 (Roll back to old version of local backup)
         }
 
         if (req.method === 'POST' && (u.pathname === '/admin/backup-config' || u.pathname === '/admin/backup-now')) {
