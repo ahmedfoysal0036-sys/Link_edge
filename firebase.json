@@ -9,8 +9,5 @@
       "package.json",
       "package-lock.json"
     ]
-  },
-  "database": {
-    "rules": "database.rules.json"
   }
 }
