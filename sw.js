@@ -1,10 +1,10 @@
-const V = 'phoenix-v8';
+const V = 'phoenix-v9';
 const SHELL = ['./', './index.html', './manifest.json', './apple-touch-icon.png', './icon-192.png', './icon-512.png', './bts-logo.jpg'];
 const CDN = [
   'https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js',
   'https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js',
-  'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js',
+  'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
 ];
 const CDN_HOSTS = ['www.gstatic.com', 'cdn.sheetjs.com', 'cdnjs.cloudflare.com'];

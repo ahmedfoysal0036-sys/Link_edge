@@ -56,6 +56,15 @@ if (!/^\d{6,}:[A-Za-z0-9_-]{30,}$/.test(BOT_TOKEN)) {
 console.log("🔑 BOT_TOKEN loaded (id: " + BOT_TOKEN.split(':')[0] + ")");
 
 const bot = new Telegraf(BOT_TOKEN);
+// Optional allowlist: ALLOWED_CHAT_IDS=123,456 (khali thakle sobai pabe)
+const ALLOWED_CHAT_IDS = String(process.env.ALLOWED_CHAT_IDS || '').split(',').map(s => s.trim()).filter(Boolean);
+if (ALLOWED_CHAT_IDS.length) {
+    bot.use((ctx, next) => {
+        const id = ctx.chat && String(ctx.chat.id);
+        if (id && ALLOWED_CHAT_IDS.includes(id)) return next();
+        return undefined;
+    });
+} else console.warn('⚠️ ALLOWED_CHAT_IDS set nai: je kew bot e search korte parbe.');
 const BOT_VERSION = 'v4.1-merge-keyonly';
 console.log("🤖 Phoenix Bot version: " + BOT_VERSION);
 
@@ -383,7 +392,8 @@ bot.catch((err) => console.error("Bot handler error:", err.message));
 // ---------- Keep-alive + secure web API ----------
 const MASTER_PIN = String(process.env.MASTER_PIN || '').trim();
 if (!MASTER_PIN) { console.error("❌ MASTER_PIN env set kora nai (Render > Environment e boshan)."); process.exit(1); }
-const TG_CHAT_ID = process.env.TG_CHAT_ID || '682844989';
+const TG_CHAT_ID = String(process.env.TG_CHAT_ID || '').trim();
+if (!TG_CHAT_ID) console.error('⚠️ TG_CHAT_ID env set kora nai (Render > Environment). Telegram backup/notification bondho thakbe.');
 const UIDS = { admin: 'phoenix-admin', user: 'phoenix-user' };
 const uidFor = (key) => 'u_' + String(key).slice(0, 100);
 const sha = (x) => crypto.createHash('sha256').update(String(x)).digest();
@@ -430,7 +440,7 @@ async function logActivity(role, action, site, detail, name) {
 
 const fails = new Map();
 const MAX_FAILS = 5, LOCK_MS = 15 * 60 * 1000;
-const clientIp = (req) => String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+const clientIp = (req) => String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',').pop().trim();
 const isLocked = (ip) => { const f = fails.get(ip); return !!(f && f.until && f.until > Date.now()); };
 function noteFail(ip) {
     const f = fails.get(ip) || { n: 0, until: 0 };
@@ -613,7 +623,7 @@ async function adminReq(req) {
     const m = /^Bearer (.+)$/.exec(req.headers.authorization || '');
     try { const d = m ? await admin.auth().verifyIdToken(m[1]) : null; return d && d.role === 'admin' ? d : null; } catch (_) { return null; }
 }
-const tgSend = (html) => bot.telegram.sendMessage(TG_CHAT_ID, html, { parse_mode: 'HTML', disable_web_page_preview: true });
+const tgSend = (html) => !TG_CHAT_ID ? Promise.resolve() : bot.telegram.sendMessage(TG_CHAT_ID, html, { parse_mode: 'HTML', disable_web_page_preview: true });
 
 const NOTE_LABEL = { add: 'New site', edit: 'Edit', merge: 'Merge', delete: 'Delete', import_master: 'Import data', import_keys: 'Import keys', wipe_master: 'WIPE data', wipe_keys: 'WIPE keys', pin_change: 'PIN changed', user_add: 'User Added', user_delete: 'User Deleted' };
 const NOTE_ICON = { add: '➕', edit: '✏️', merge: '🔀', delete: '🗑', import_master: '📥', import_keys: '📥', wipe_master: '⚠️', wipe_keys: '⚠️', pin_change: '🔐', user_add: '👤', user_delete: '👤' };
@@ -686,6 +696,7 @@ async function sendBackup(kind) {
     if (!XLSX) throw new Error('Server e xlsx package nai (npm install xlsx)');
     const b = await makeBackup(), d = dhakaDate();
     const cap = `💾 PHOENIX ${kind === 'auto' ? 'AUTO' : kind === 'push' ? 'PUSH' : 'MANUAL'} BACKUP\n📅 ${d}\n🌐 Sites: ${b.sites} · 🔑 Keys: ${b.nkeys}`;
+    if (!TG_CHAT_ID) throw new Error('TG_CHAT_ID set kora nai');
     await bot.telegram.sendDocument(TG_CHAT_ID, { source: b.master, filename: `Phoenix_Master_${d}.xlsx` }, { caption: cap });
     await bot.telegram.sendDocument(TG_CHAT_ID, { source: b.keys, filename: `Phoenix_Keys_${d}.xlsx` });
     return `ok (${b.sites} sites, ${b.nkeys} keys)`;

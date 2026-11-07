@@ -1,6 +1,44 @@
 {
   "rules": {
-    ".read": "auth != null",
-    ".write": "auth != null"
+    ".read": false,
+    ".write": false,
+
+    "professor_master_db": {
+      ".read": "auth != null && (auth.token.role === 'admin' || auth.token.role === 'user') && !root.child('app_config/blocked/' + auth.uid).exists()",
+      ".write": "auth != null && auth.token.role === 'admin' && !root.child('app_config/blocked/' + auth.uid).exists()",
+      "$idx": {
+        ".write": "auth != null && (auth.token.role === 'admin' || auth.token.role === 'user') && !root.child('app_config/blocked/' + auth.uid).exists()",
+        ".validate": "newData.hasChildren()"
+      }
+    },
+
+    "professor_keys_db": {
+      ".read": "auth != null && (auth.token.role === 'admin' || auth.token.role === 'user') && !root.child('app_config/blocked/' + auth.uid).exists()",
+      ".write": "auth != null && auth.token.role === 'admin' && !root.child('app_config/blocked/' + auth.uid).exists()",
+      "$key": {
+        ".write": "auth != null && (auth.token.role === 'admin' || auth.token.role === 'user') && !root.child('app_config/blocked/' + auth.uid).exists()",
+        ".validate": "newData.isString() && newData.val().length <= 50000"
+      }
+    },
+
+    "activity_log": {
+      ".read": "auth != null && auth.token.role === 'admin' && !root.child('app_config/blocked/' + auth.uid).exists()",
+      "$id": {
+        ".write": "auth != null && (auth.token.role === 'admin' || auth.token.role === 'user') && !root.child('app_config/blocked/' + auth.uid).exists() && !data.exists()",
+        ".validate": "newData.hasChildren(['ts', 'role', 'action'])",
+        "ts": { ".validate": "newData.isNumber()" },
+        "role": { ".validate": "newData.isString() && newData.val() === auth.token.role" },
+        "action": { ".validate": "newData.isString() && newData.val().length <= 60" },
+        "name": { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "site": { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "detail": { ".validate": "newData.isString() && newData.val().length <= 600" },
+        "$other": { ".validate": false }
+      }
+    },
+
+    "app_config": {
+      ".read": false,
+      ".write": false
+    }
   }
 }

@@ -15,7 +15,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
@@ -156,6 +156,7 @@ main{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;position
 #menuBtn{display:grid}
 .content{padding:8px 18px 108px;width:100%;margin:0 auto;overflow:auto;flex:1;min-height:0}
 .page{display:none}.page.active{display:block;animation:iosIn .28s ease}
+.content,.page,.tw{min-width:0}
 @keyframes iosIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .overlay{display:none;position:absolute;inset:0;background:rgba(15,23,42,.28);z-index:55}
 .overlay.open{display:block}
@@ -267,7 +268,11 @@ body[data-role=offline] .fab,body[data-role=user] .fab.admin-only{display:none!i
 @media(min-width:980px){
   .stage{padding:18px;background:var(--shell)}
   .phone{flex:none;max-width:1180px;width:100%;height:min(860px,calc(100dvh - 36px));margin:0 auto;border-radius:28px;border:1px solid var(--border);box-shadow:var(--shadow);flex-direction:row}
-  #app{flex-direction:row}
+  #app{flex-direction:row;min-width:0}
+  .tw{max-width:100%}
+  .filters{flex-wrap:nowrap;align-items:center}
+  .filters select.inp{min-width:0;flex:1 1 0;width:auto}
+  .filters .btn{width:auto;flex:none;white-space:nowrap}
   .side{display:flex}
   #menuBtn{display:none}
   .tabbar{display:none}
@@ -558,6 +563,10 @@ let UNAME = '';
         function toArray(v) {
             return Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []);
         }
+        function normRow(r) {
+            if (!r || Array.isArray(r) || typeof r !== 'object') return r;
+            const a = []; for (let i = 0; i < 8; i++) a.push(r[i] ?? r[String(i)] ?? ''); return a;
+        }
 
         const R_TYPED  = /(^|[^A-Z0-9])([A-Z]{2,6})[_ -]([A-Z])(\d{2,5})(?!\d)/g;   
         const R_REGION = /(^|[^A-Z0-9])([A-Z]{2,6})(\d{2,5})(?!\d)/g;                
@@ -751,7 +760,7 @@ async function logout() {
 }
 
 function startListeners() {
-    db.ref('professor_master_db').on('value', (s) => { masterData = toArray(s.val()); masterIsArr = Array.isArray(s.val()); refreshUI_Internal(); snapSoon(); },
+    db.ref('professor_master_db').on('value', (s) => { masterData = toArray(s.val()).map(normRow); masterIsArr = Array.isArray(s.val()); refreshUI_Internal(); snapSoon(); },
         (e) => { if (/permission/i.test(e.message)) { auth.signOut(); loginNote('Access bondho kora hoyeche'); } else alert('❌ Firebase read error (master): ' + e.message); });
     db.ref('professor_keys_db').on('value', (s) => { keysData = s.val() || {}; refreshUI_Internal(); snapSoon(); },
         (e) => { if (/permission/i.test(e.message)) { auth.signOut(); loginNote('Access bondho kora hoyeche'); } else alert('❌ Firebase read error (keys): ' + e.message); });
@@ -776,11 +785,20 @@ async function applyRole(u) {
     ROLE = '';
     let uname = '';
     if (u) {
+        let got = false;
         try { 
             const claims = await u.getIdTokenResult();
             ROLE = claims.claims.role || ''; 
-            uname = claims.claims.name || ''; UNAME = uname;
+            uname = claims.claims.name || ''; UNAME = uname; got = true;
+            if (ROLE) { try { sessionStorage.setItem('phx_claims', JSON.stringify({ uid: u.uid, role: ROLE, name: uname })); } catch (_) {} }
         } catch (_) {}
+        if (!got) {   // offline: token refresh hoyni, sign-out na kore ager role use kori
+            try {
+                const c = JSON.parse(sessionStorage.getItem('phx_claims') || 'null');
+                if (c && c.uid === u.uid && (c.role === 'admin' || c.role === 'user')) { ROLE = c.role; uname = c.name || ''; UNAME = uname; }
+            } catch (_) {}
+            if (!ROLE && (!navigator.onLine || OFFLINE)) { ROLE = 'user'; }
+        }
         if (ROLE !== 'admin' && ROLE !== 'user') {   
             ROLE = ''; auth.signOut(); loginNote('Notun version e abar login korun'); return false;
         }
@@ -1043,7 +1061,7 @@ function debounceFilter() {
 
         function prepDataImport(rows) {
             if (!rows.length) { alert('❌ File khali.'); return; }
-            const hasHead = /site/i.test(s8(rows[0][0]));
+            const hasHead = /^\s*site(\s*(name|id|code))?\s*$/i.test(s8(rows[0][0]));
             const body = rows.slice(hasHead ? 1 : 0);
             const pad = (r) => { const a = r.slice(); while (a.length < 8) a.push(''); return a; };
             const names0 = masterData.slice(1).map(r => Array.isArray(r) ? s8(r[0]) : '');
@@ -1116,7 +1134,7 @@ function debounceFilter() {
         function detectKeyColumns(rows) {
             for (let i = 0; i < Math.min(rows.length, 15); i++) {
                 const h = (rows[i] || []).map(c => (c ?? '').toString().trim().toLowerCase());
-                const siteCol = h.findIndex(x => /^site/.test(x));
+                const siteCol = h.findIndex(x => /^site(\s*(name|id|code))?$/.test(x));
                 if (siteCol === -1) continue;
                 const keyCol = h.findIndex((x, idx) => idx !== siteCol && /key|info/.test(x));
                 if (keyCol === -1) continue;
@@ -1656,11 +1674,21 @@ function clientColor(c) {
     c = s8(c).toUpperCase();
     return c.includes('GRAMEEN') ? '#3b82f6' : c.includes('ROBI') ? '#ef4444' : c.includes('BANGLALINK') ? '#f59e0b' : '#8b95a8';
 }
+function addBaseTiles() {
+    // OSM 403 "Access blocked" chhobi pathay (error event ashe na), tai file:// / localhost e Esri default.
+    // https site (GitHub Pages) e OSM default. Dan pashe layer switch diye jekono shomoy bodlano jay.
+    const web = /^https:$/.test(location.protocol) && !/^(localhost|127\.|\[::1\])/.test(location.hostname);
+    const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, referrerPolicy: 'origin', attribution: '&copy; OpenStreetMap contributors' });
+    const esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Tiles &copy; Esri' });
+    const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Tiles &copy; Esri' });
+    (web ? osm : esri).addTo(map);
+    L.control.layers({ 'Street (OSM)': osm, 'Street (Esri)': esri, 'Satellite': sat }, null, { position: 'topright' }).addTo(map);
+}
 function openMap() {
     if (typeof L === 'undefined' || !L.markerClusterGroup) { $('mapInfo').textContent = 'Map library load hoyni, internet check korun.'; return; }
     if (!map) {
         map = L.map('mapBox').setView([23.8, 90.4], 7);
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+        addBaseTiles();
         cluster = L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 50 }).addTo(map);
     }
     setTimeout(() => { map.invalidateSize(); renderMap(true); }, 50);
