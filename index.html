@@ -733,7 +733,7 @@ async function verifyAccess() {
     const pin = $('pinIn').value.trim();
     if (!pin) return;
     const err = $('authError'), btn = $('authBtn');
-    if (!navigator.onLine) {   // internet nai -> local saved data (PIN diye unlock)
+    if (!navigator.onLine) {   // internet nai -> local saved data (unlock by PIN)
         if (await offlineUnlock(pin)) { rememberPin(pin); $('pinIn').value = ''; } else loginNote('Wrong PIN, ba offline data nai');
         return;
     }
@@ -747,7 +747,7 @@ async function verifyAccess() {
         rememberPin(pin);
         $('pinIn').value = '';
     } catch (e) {
-        if ((e instanceof TypeError || e.name === 'AbortError') && await hasSnap() && confirm('Server pawa jachchhe na. Offline (view-only) mode e dhukben?')) {
+        if ((e instanceof TypeError || e.name === 'AbortError') && await hasSnap() && confirm('Server not found. Offline (view-only) mode?')) {
             if (await offlineUnlock(pin)) { rememberPin(pin); $('pinIn').value = ''; return; }
             loginNote('Wrong PIN'); return;
         }
@@ -758,12 +758,12 @@ async function verifyAccess() {
 }
 
 async function askPin(label) {
-    if (ROLE !== 'admin') { alert('Shudhu Admin e eta korte pare.'); return false; }
+    if (ROLE !== 'admin') { alert('Only admin can do.'); return false; }
     const pin = prompt('Enter Admin PIN to ' + label + ':');
     if (pin === null) return false;
     try {
         const r = await api('/auth/pin', { method: 'POST', headers: JSON_H, body: JSON.stringify({ pin: pin.trim(), check: true }) });
-        if (r.ok) { const j = await r.json().catch(() => ({})); if (j.role === 'admin') return true; alert('Admin PIN lagbe.'); return false; }
+        if (r.ok) { const j = await r.json().catch(() => ({})); if (j.role === 'admin') return true; alert('Need Admin PIN.'); return false; }
         alert(r.status === 429 ? 'Too many attempts. Pore try later.' : 'Invalid PIN.');
     } catch (e) { alert('Server not reachable.'); }
     return false;
@@ -775,7 +775,7 @@ async function logout() {
 
 function startListeners() {
     db.ref('professor_master_db').on('value', (s) => { masterData = toArray(s.val()).map(normRow); masterIsArr = Array.isArray(s.val()); refreshUI_Internal(); snapSoon(); },
-        (e) => { if (/permission/i.test(e.message)) { auth.signOut(); loginNote('Access bondho kora hoyeche'); } else alert('❌ Firebase read error (master): ' + e.message); });
+        (e) => { if (/permission/i.test(e.message)) { auth.signOut(); loginNote('Access denied'); } else alert('❌ Firebase read error (master): ' + e.message); });
     db.ref('professor_keys_db').on('value', (s) => { keysData = s.val() || {}; refreshUI_Internal(); snapSoon(); },
         (e) => { if (/permission/i.test(e.message)) { auth.signOut(); loginNote('Access bondho kora hoyeche'); } else alert('❌ Firebase read error (keys): ' + e.message); });
 }
@@ -922,10 +922,10 @@ async function loadUsers() {
         box.innerHTML = (j.users || []).length ? j.users.map(u =>
             `<div class="logrow" style="grid-template-columns:1fr auto auto"><b>${esc(u.name)}</b><span><span class="tag ${u.role === 'admin' ? 'tag-gp' : ''}">${esc(u.role)}</span>${u.blocked ? ' <span class="tag tag-robi">BLOCKED</span>' : ''}</span><span class="acts"><button class="op" data-a="${u.blocked ? 'unblock' : 'block'}" data-k="${esc(u.key)}">${u.blocked ? 'Unblock' : 'Block'}</button><button class="op" style="color:var(--bad)" data-a="delete" data-k="${esc(u.key)}">Delete</button></span></div>`
         ).join('') : '<div class="more">No users yet</div>';
-    } catch (e) { box.innerHTML = '<div class="more">User list load hoyni: ' + esc(e.message) + '</div>'; }
+    } catch (e) { box.innerHTML = '<div class="more">User list loaded: ' + esc(e.message) + '</div>'; }
 }
 async function userAct(a, k) {
-    if (a === 'delete' && !confirm('"' + k + '" user ke delete korben?')) return;
+    if (a === 'delete' && !confirm('"' + k + '" delete user?')) return;
     const pin = prompt('Admin PIN diye confirm korun:');
     if (pin === null) return;
     try { await bkCall('/admin/users', { action: a, username: k, currentAdminPin: pin.trim() }); loadUsers(); loadLogs(); }
@@ -954,10 +954,10 @@ function renderLogs() {
 }
 
 function deleteSite() {
-    if (OFFLINE || !navigator.onLine) { alert('Offline: delete bondho.'); return; }
+    if (OFFLINE || !navigator.onLine) { alert('Offline: delete close.'); return; }
     if (ROLE !== 'admin' || !editOrigName) return;
     const name = editOrigName;
-    if (!confirm('"' + name + '" site ta delete korben? (Key info thakbe, shudhu site row muche jabe)')) return;
+    if (!confirm('"' + name + '" Want to delete site ? (Key info here, only site row erase)')) return;
     const newMaster = [...masterData];
     const idx = newMaster.findIndex((r, i) => i > 0 && r && r[0]?.toString().trim().toUpperCase() === name.toUpperCase());
     if (idx === -1) { alert('Site paoa jay nai'); return; }
@@ -1203,7 +1203,7 @@ function debounceFilter() {
             const incoming = {}, newKeys = {};
             Object.keys(bucket).forEach(k => { incoming[k] = bucket[k].slice().reverse(); newKeys[k] = incoming[k].join(SEP); });
             const total = Object.keys(newKeys).length;
-            if (!total) { alert("❌ Kono key data paoa jay nai. Header check korun."); return; }
+            if (!total) { alert("❌ No key data found.Check Header."); return; }
 
             const changes = {}, st = { add: 0, upd: 0, same: 0, clean: 0, keep: 0 };
             for (const k of Object.keys(incoming)) {
@@ -1223,9 +1223,9 @@ function debounceFilter() {
             }
             const names = masterData.slice(1).map(r => Array.isArray(r) ? s8(r[0]) : '');
             const koAfter = computeKeyOnly({ ...keysData, ...changes }, names).length;
-            const R = [['File e rows', used], ['File e site/key', total], ['Notun key', st.add], ['Notun entry jog hobe', st.upd], ['Hubohu same', st.same]];
+            const R = [['File e rows', used], ['File e site/key', total], ['Notun key', st.add], ['New entry add', st.upd], ['same', st.same]];
             if (st.clean) R.push(['&amp; theek hobe', st.clean]);
-            R.push(['File e nai (thakbe)', st.keep], ['Key-only (BTS data nai)', koAfter]);
+            R.push(['File e nai (thakbe)', st.keep], ['Key-only (BTS data not found)', koAfter]);
             showImp('Import Key: Merge preview', R, { kind: 'keys', changes, newKeys, st, changed: Object.keys(changes).length });
         }
 
@@ -1410,7 +1410,7 @@ function viewKO(j) {
     const o = keyOnly[j]; if (!o) return;
     if ($('pg-sites').classList.contains('active')) saveRecent();
     $('viewBody').innerHTML = `<div class="kv"><span>Site</span><b>${esc(o.names.join(' / '))}</b></div>`
-        + `<div class="kv"><span>Status</span><b><span class="tag tag-ko">BTS data nai</span></b></div>`
+        + `<div class="kv"><span>Status</span><b><span class="tag tag-ko">BTS data not found</span></b></div>`
         + `<div class="kv full"><span>Key information</span><pre>${esc(unesc(o.v))}</pre></div>`;
     viewIdx = -1; viewKOIdx = j;
     $('viewEditBtn').innerHTML = '<i class="fas fa-plus"></i> Add to Master';
@@ -1517,11 +1517,11 @@ function updateMasterData() {
         // original row ta purono naam diye khujbo (notun naam diye na), tahole rename korle notun row hoy na
         const o = editOrigName.toUpperCase();
         idx = masterData.findIndex((r, i) => i > 0 && Array.isArray(r) && s8(r[0]).toUpperCase() === o);
-        if (idx === -1) { alert('Ei site ta ar paoa jachchhe na (onno keu delete/rename korte pare). Abar khule try korun.'); toggleForm('hide'); return; }
+        if (idx === -1) { alert('This site not found (anybody can delete/rename).Open and then try again.'); toggleForm('hide'); return; }
         oldRow = masterData[idx];
         if (name.toUpperCase() !== o) {
             const d = findDup(name);
-            if (d !== -1 && d !== idx) { alert('"' + s8(masterData[d][0]) + '" naame site already ache. Onno naam din.'); return; }
+            if (d !== -1 && d !== idx) { alert('"' + s8(masterData[d][0]) + '" This site already exist, please try new name.'); return; }
         }
     } else {
         const d = findDup(name);
@@ -1566,7 +1566,7 @@ function commitRow(idx, newRow, keyText, keyName, act, site, detail, opt) {
     let timedOut = false;
     const release = () => { clearTimeout(tm); saving = false; setSaveBusy(false); };
     // Firebase offline thakle promise atke thake; button jeno chirokal "Saving..." na thake
-    const tm = setTimeout(() => { timedOut = true; release(); alert('⏳ Save hote deri hochche. Internet check korun, connection ashle nije theke save hobe.'); }, 15000);
+    const tm = setTimeout(() => { timedOut = true; release(); alert('⏳ Get time to save. Check ypur Internet , After reach connection it will save auto.'); }, 15000);
 
     Promise.all(ops).then(() => {
         masterData = newMaster;
@@ -1577,9 +1577,9 @@ function commitRow(idx, newRow, keyText, keyName, act, site, detail, opt) {
         logAct(act, site, detail);
         release();
         if (timedOut) { refreshUI_Internal(); return; }
-        alert((keyText || delSk) ? '✅ Record & Key Updated Successfully!' : '✅ Record Updated Successfully!');
+        alert((keyText || delSk) ? '✅ Record & Key Updated Successfully!' : '✅ Sir your data Updated Successfully!');
         toggleForm('hide'); refreshUI_Internal();
-        if (delSk && findKeyInfo(keyName, true)) alert('ℹ️ Ei site er nijer key muchhe geche, kintu onno naam/ID e rakha key ekhono dekhacche.');
+        if (delSk && findKeyInfo(keyName, true)) alert('ℹ️ This site own key removed, but different ID/Name sill show.');
     }).catch(err => { release(); if (!timedOut) alert('❌ Firebase Error: ' + err.message); });
 }
 
@@ -1731,7 +1731,7 @@ function renderMap(fit) {
     if (fit && mk.length) map.fitBounds(cluster.getBounds(), { padding: [30, 30], maxZoom: 15 });
 }
 
-// ---------- Auto backup settings (server e kaj hoy) ----------
+// ---------- Auto backup settings (server working) ----------
 async function bkCall(path, body) {
     const tok = await auth.currentUser.getIdToken();
     const r = await api(path, { method: 'POST', headers: { ...JSON_H, Authorization: 'Bearer ' + tok }, body: JSON.stringify(body || {}) });

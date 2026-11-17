@@ -294,7 +294,7 @@ bot.command('version', async (ctx) => {
         `🤖 Bot version: ${BOT_VERSION}\n` +
         `📋 Sites in cache: ${state.index.length}\n` +
         `🔑 Total keys in DB: ${state.keyCount}\n` +
-        `🔗 Key-only (BTS data nai): ${state.koIndex.length}\n` +
+        `🔗 Key-only (BTS data not found): ${state.koIndex.length}\n` +
         `✅ Ready: ${state.masterReady && state.keysReady ? 'yes' : 'loading...'}`
     );
 });
@@ -347,18 +347,18 @@ bot.on('text', async (ctx) => {
 
             let b = '';
             if (ko) {
-                b += `📌 <b>Site:</b> ${esc(name) || '-'} ⚠️ <i>BTS data nai</i>\n`;
+                b += `<b>Site:</b> ${esc(name) || '-'} ⚠️ <i>BTS data not found</i>\n`;
                 b += `<b>Key information:</b>\n<i>${esc(keyInfo)}</i>\n`;
             } else if (isKeyOnly) {
                 b += `<b>Site name:</b> ${esc(name) || '-'}\n`;
                 b += `<b>Key information:</b>\n<i>${esc(keyInfo)}</i>\n`;
             } else {
-                b += `📌 <b>Site:</b> ${esc(name) || '-'}\n`;
-                b += `🌐 <b>IP:</b> <code>${esc(ip)}</code>\n`;
-                b += `🏢 <b>Client:</b> ${esc(client)}\n`;
-                b += `🏙 <b>Sub-Center:</b> ${esc(subCenter)}\n`;
-                b += `🛠 <b>Model:</b> ${esc(model)}\n`;
-                b += `📍 <b>Node:</b> ${esc(nodeAddr)}\n`;
+                b += ` <b>Site:</b> ${esc(name) || '-'}\n`;
+                b += ` <b>IP:</b> <code>${esc(ip)}</code>\n`;
+                b += ` <b>Client:</b> ${esc(client)}\n`;
+                b += ` <b>Sub-Center:</b> ${esc(subCenter)}\n`;
+                b += ` <b>Model:</b> ${esc(model)}\n`;
+                b += ` <b>Node:</b> ${esc(nodeAddr)}\n`;
                 if (mapLink) {
                     b += `🌍 <b>Location:</b> <a href="${mapLink}">${esc(lat)}, ${esc(long)}</a>\n`;
                 }
@@ -376,7 +376,7 @@ bot.on('text', async (ctx) => {
         }
         const hidden = results.length - included;
         if (hidden > 0) {
-            response += `<i>+ ${hidden} more results. Aro specific likhun (jemon full site code).</i>`;
+            response += `<i>+ ${hidden} more results. Write more specification (full site code).</i>`;
         }
 
         await sendHtml(ctx, response);
@@ -696,7 +696,7 @@ async function sendBackup(kind) {
     if (!XLSX) throw new Error('Server e xlsx package nai (npm install xlsx)');
     const b = await makeBackup(), d = dhakaDate();
     const cap = `💾 PHOENIX ${kind === 'auto' ? 'AUTO' : kind === 'push' ? 'PUSH' : 'MANUAL'} BACKUP\n📅 ${d}\n🌐 Sites: ${b.sites} · 🔑 Keys: ${b.nkeys}`;
-    if (!TG_CHAT_ID) throw new Error('TG_CHAT_ID set kora nai');
+    if (!TG_CHAT_ID) throw new Error('TG_CHAT_ID not set');
     await bot.telegram.sendDocument(TG_CHAT_ID, { source: b.master, filename: `Phoenix_Master_${d}.xlsx` }, { caption: cap });
     await bot.telegram.sendDocument(TG_CHAT_ID, { source: b.keys, filename: `Phoenix_Keys_${d}.xlsx` });
     return `ok (${b.sites} sites, ${b.nkeys} keys)`;
