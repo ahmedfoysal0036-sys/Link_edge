@@ -590,9 +590,9 @@ let UNAME = '';
             for (const k of Object.keys(keysObj || {})) {
                 const v = valueToString(keysObj[k]);
                 if (!v) continue;
-                addTo(idx.full, safeKey(k), { v });
+                addTo(idx.full, safeKey(k), { v, k });
                 for (const id of parseIds(k)) {
-                    const e = { v, id, code: idCode(id) };
+                    const e = { v, id, code: idCode(id), k };
                     if (id.reg) addTo(idx.core, id.reg + id.num, e);
                     if (id.num.length >= 4) addTo(idx.num, id.num, e);
                 }
@@ -682,6 +682,20 @@ let UNAME = '';
             ensureIndexes();
             const res = unesc(lookupKeys(siteName, keyIdx) || '');
             return editMode ? res.split(SEP).filter(x => !x.startsWith('(≈')).join(SEP) : res;
+        }
+
+        // Edit form e jei key info dekhay, oi ta Firebase er kon kon key theke ashche (precise match)
+        function matchedKeyNames(siteName) {
+            ensureIndexes();
+            const out = new Set();
+            (keyIdx.full.get(safeKey(siteName)) || []).forEach(e => out.add(e.k));
+            for (const tok of safeKey(siteName).split(/[^A-Z0-9]+/)) {
+                if (tok.length >= 5) (keyIdx.full.get(tok) || []).forEach(e => out.add(e.k));
+            }
+            for (const mi of parseIds(siteName)) {
+                if (mi.reg) (keyIdx.core.get(mi.reg + mi.num) || []).forEach(e => { if (typOk(mi.typ, e.id.typ)) out.add(e.k); });
+            }
+            return [...out];
         }
 
         function makeMatcher(tokens) {
@@ -933,9 +947,9 @@ async function loadLogs() {
 function renderLogs() {
     const q = $('logSearch').value.trim().toLowerCase(), a = $('logAction').value, rl = $('logRole').value;
     const rows = logCache.filter(l => l && (!a || l.action === a) && (!rl || l.role === rl) &&
-        (!q || [l.site, l.detail, l.action, l.role].join(' ').toLowerCase().includes(q)));
+        (!q || [l.name, l.site, l.detail, l.action, l.role].join(' ').toLowerCase().includes(q)));
     $('logList').innerHTML = rows.length ? rows.map(l =>
-        `<div class="logrow"><span class="mono lg-t">${esc(fmtTs(l.ts))}</span><span><span class="tag ${l.role === 'admin' ? 'tag-gp' : ''}">${esc(l.role)}</span></span><b>${esc(LOG_LABEL[l.action] || l.action)}</b><span class="lg-d">${esc([l.site, l.detail].filter(Boolean).join(' · '))}</span></div>`
+        `<div class="logrow"><span class="mono lg-t">${esc(fmtTs(l.ts))}</span><span><b>${esc(l.name || '-')}</b> <span class="tag ${l.role === 'admin' ? 'tag-gp' : ''}">${esc(l.role)}</span></span><b>${esc(LOG_LABEL[l.action] || l.action)}</b><span class="lg-d">${esc([l.site, l.detail].filter(Boolean).join(' · '))}</span></div>`
     ).join('') : '<div class="more">Kono log nai</div>';
 }
 
@@ -1517,7 +1531,7 @@ function updateMasterData() {
     const nameChanged = editing && name.toUpperCase() !== editOrigName.toUpperCase();
     const baseKey = editing ? editOrigKey : findKeyInfo(name, true);
     const keyChanged = keyText !== baseKey;
-    const delKey = editing && !nameChanged && !keyText && !!baseKey;          // key khali kore dile muche jabe
+    const delKey = editing && !keyText && !!baseKey;          // key khali kore dile muche jabe
     const writeKey = (keyText && (keyChanged || nameChanged)) ? keyText : '';  // key bodlale (ba rename hole) tobei likhbo
 
     const changed = oldRow ? FIELD_L.map((l, i) => s8(oldRow[i]) !== s8(newRow[i]) ? l + ': ' + (s8(oldRow[i]) || '-') + ' → ' + (s8(newRow[i]) || '-') : '').filter(Boolean) : [];
@@ -1525,9 +1539,11 @@ function updateMasterData() {
     if (delKey) changed.push('Key removed');
     if (editing && !changed.length) { toggleForm('hide'); return; }   // kichu bodlayni
 
+    // HARD RESET: key edit korle ei site er purono shob key Firebase theke muche, shudhu notun ta thakbe
+    const purge = (editing && (writeKey || delKey)) ? matchedKeyNames(editOrigName) : [];
     commitRow(idx, newRow, writeKey, name, editing ? 'edit' : 'add', name,
         editing ? changed.join(' | ').slice(0, 580) : ([s8(newRow[1]), s8(newRow[7]), keyText ? 'with key' : ''].filter(Boolean).join(' · ')),
-        { delKey, keyName: editOrigName });
+        { delKey, keyName: editOrigName, purge });
 }
 
 function commitRow(idx, newRow, keyText, keyName, act, site, detail, opt) {
@@ -1541,8 +1557,10 @@ function commitRow(idx, newRow, keyText, keyName, act, site, detail, opt) {
     else { alert('Ekhon save kora jachchhe na, Admin ke jananu.'); return; }
     const sk = safeKey(keyName);
     const delSk = opt && opt.delKey ? safeKey(opt.keyName) : '';
+    const purge = ((opt && opt.purge) || []).filter(k => !(keyText && k === sk));   // notun key er naam bad
     if (keyText) ops.push(db.ref('professor_keys_db/' + sk).set(keyText));
-    if (delSk) ops.push(db.ref('professor_keys_db/' + delSk).remove());
+    if (delSk && !purge.includes(delSk)) ops.push(db.ref('professor_keys_db/' + delSk).remove());
+    purge.forEach(k => ops.push(db.ref('professor_keys_db/' + k).remove()));
 
     saving = true; setSaveBusy(true);
     let timedOut = false;
@@ -1554,7 +1572,7 @@ function commitRow(idx, newRow, keyText, keyName, act, site, detail, opt) {
         masterData = newMaster;
         let kd = keysData;
         if (keyText) kd = { ...kd, [sk]: keyText };
-        if (delSk) { kd = { ...kd }; delete kd[delSk]; }
+        if (delSk || purge.length) { kd = { ...kd }; if (delSk) delete kd[delSk]; purge.forEach(k => delete kd[k]); }
         keysData = kd;
         logAct(act, site, detail);
         release();
