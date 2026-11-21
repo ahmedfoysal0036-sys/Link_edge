@@ -3,1894 +3,363 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>BTS Data Hub</title>
-<link rel="manifest" href="./manifest.json">
-<link rel="apple-touch-icon" href="./apple-touch-icon.png">
-<meta name="theme-color" content="#eef2f8">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Phoenix">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="icon" type="image/jpeg" href="./bts-logo.jpg">
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
-<style>
-:root{
-  --bg:#eef2f8;--card:#fff;--side:#fff;--text:#1f2937;--muted:#8b95a7;
-  --border:rgba(15,23,42,.06);--primary:#6d5efc;--primary-s:rgba(109,94,252,.12);
-  --input:#f4f6fb;--ok:#22c55e;--bad:#ef4444;--gp:#3b82f6;--robi:#ef4444;--bl:#f59e0b;
-  --on-primary:#fff;--r:18px;--fill:#fff;--grouped:#fff;--hairline:rgba(15,23,42,.08);
-  --tabbar:rgba(255,255,255,.92);--glass:#f4f6fb;--shadow:0 10px 30px rgba(15,23,42,.06);
-  --shell:#e8eef8;--trend:#22c55e;--icon:#c4b5fd
-}
-[data-theme=light]{
-  --bg:#eef2f8;--card:#fff;--side:#fff;--text:#1f2937;--muted:#8b95a7;
-  --border:rgba(15,23,42,.06);--primary:#6d5efc;--primary-s:rgba(109,94,252,.12);
-  --input:#f4f6fb;--ok:#22c55e;--bad:#ef4444;--gp:#3b82f6;--robi:#ef4444;--bl:#f59e0b;
-  --fill:#fff;--grouped:#fff;--hairline:rgba(15,23,42,.08);--tabbar:rgba(255,255,255,.92);
-  --glass:#f4f6fb;--shadow:0 10px 30px rgba(15,23,42,.06);--shell:#e8eef8;--icon:#c4b5fd
-}
-[data-theme=sky]{
-  --bg:#e8f3ff;--card:#fff;--side:#fff;--text:#16324a;--muted:#6e8aa3;
-  --border:rgba(14,80,130,.08);--primary:#2b8cff;--primary-s:rgba(43,140,255,.12);
-  --input:#eef6ff;--ok:#0ea5e9;--bad:#ef4444;--gp:#2b8cff;--robi:#ef4444;--bl:#f59e0b;
-  --fill:#fff;--hairline:rgba(14,80,130,.1);--tabbar:rgba(255,255,255,.94);
-  --glass:#eef6ff;--shadow:0 10px 28px rgba(14,80,130,.08);--shell:#d9ecff;--icon:#7dd3fc
-}
-[data-theme=mint]{
-  --bg:#eaf7f2;--card:#fff;--side:#fff;--text:#16362d;--muted:#6d8b80;
-  --border:rgba(16,90,70,.08);--primary:#10b981;--primary-s:rgba(16,185,129,.14);
-  --input:#eef8f4;--ok:#059669;--bad:#ef4444;--gp:#0ea5e9;--robi:#ef4444;--bl:#f59e0b;
-  --fill:#fff;--hairline:rgba(16,90,70,.1);--tabbar:rgba(255,255,255,.94);
-  --glass:#eef8f4;--shadow:0 10px 28px rgba(16,90,70,.08);--shell:#d8f3e9;--icon:#6ee7b7
-}
-[data-theme=sand]{
-  --bg:#f6efe6;--card:#fffdf9;--side:#fffdf9;--text:#3b2f24;--muted:#8c7b6b;
-  --border:rgba(90,60,30,.08);--primary:#d97706;--primary-s:rgba(217,119,6,.14);
-  --input:#f7f1e8;--ok:#65a30d;--bad:#ef4444;--gp:#0ea5e9;--robi:#ef4444;--bl:#d97706;
-  --fill:#fffdf9;--hairline:rgba(90,60,30,.1);--tabbar:rgba(255,253,249,.94);
-  --glass:#f7f1e8;--shadow:0 10px 28px rgba(90,60,30,.08);--shell:#efe4d6;--icon:#fcd34d
-}
-[data-theme=dark]{
-  --bg:#0b1020;--card:#151b2e;--side:#101628;--text:#e8eefc;--muted:#8b95b7;
-  --border:rgba(255,255,255,.08);--primary:#8b7cff;--primary-s:rgba(139,124,255,.18);
-  --input:#1b2340;--ok:#34d399;--bad:#fb7185;--gp:#60a5fa;--robi:#fb7185;--bl:#fbbf24;
-  --on-primary:#fff;--fill:#151b2e;--grouped:#1b2340;--hairline:rgba(255,255,255,.1);
-  --tabbar:rgba(16,22,40,.9);--glass:rgba(255,255,255,.06);--shadow:0 16px 40px rgba(0,0,0,.35);
-  --shell:#070b16;--icon:#8b7cff
-}
-body.theme-fade,body.theme-fade .card,body.theme-fade .side,body.theme-fade .top,body.theme-fade .inp,body.theme-fade .btn,body.theme-fade .tag,body.theme-fade table,body.theme-fade th,body.theme-fade td,body.theme-fade .sheet,body.theme-fade .phone,body.theme-fade .tabbar{transition:background-color .35s ease,color .35s ease,border-color .35s ease,box-shadow .35s ease}
-@media(prefers-reduced-motion:reduce){body.theme-fade,body.theme-fade *{transition:none!important}}
-.swrow{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
-.sw-th{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;border:1px solid var(--hairline);background:var(--input);font-weight:600;font-size:13px}
-.sw-th.on{border-color:var(--primary);background:var(--primary-s);color:var(--primary)}
-.swc{width:18px;height:18px;border-radius:50%;border:1px solid rgba(128,128,128,.35);display:inline-block}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
-.stat.click{cursor:pointer}.stat.click:active{transform:scale(.98)}
-.stat small{display:block;margin-top:4px;color:var(--muted);font-size:12px}
-.dl{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--hairline);font-size:14px}
-.dl:last-child{border-bottom:0}.dl small{color:var(--muted)}
-.dl.c{display:block}.dl.c small{display:block;margin-top:2px;word-break:break-word}
-.dh{display:flex;justify-content:space-between;align-items:center}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
-body{
-  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,"Segoe UI",Roboto,sans-serif;
-  background:var(--bg);color:var(--text);font-size:15px;-webkit-text-size-adjust:100%;
-  min-height:100dvh;-webkit-font-smoothing:antialiased
-}
-button{font:inherit;cursor:pointer;border:0;color:inherit;background:none}
-input,textarea,select{font:inherit;color:var(--text)}
-.mono,code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-.stage{min-height:100dvh;display:flex;flex-direction:column;background:var(--shell)}
-.phone{flex:1;min-height:0;width:100%;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column}
-/* mobile: stage ke screen er height e bandho, tahole .content nijei scroll kore ar modal/tabbar/fab screen e thake (na hole beshi row hole edit form screen er onek niche chole jay) */
-@media(max-width:979px){.stage{height:100vh;height:100dvh;min-height:0}}
-#loginGate{
-  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-  z-index:200;overflow:hidden;color:#fff;padding:24px
-}
-.lock-bg{
-  position:absolute;inset:0;
-  background:
-    linear-gradient(180deg,rgba(8,12,24,.28) 0%,rgba(18,10,20,.55) 55%,rgba(6,8,16,.78) 100%),
-    url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
-}
-.lock-inner{
-  position:relative;z-index:1;width:100%;max-width:420px;
-  display:flex;flex-direction:column;align-items:stretch;
-  padding:42px 36px 32px;border-radius:22px;
-  background:rgba(18,22,34,.28);border:1px solid rgba(255,255,255,.22);
-  backdrop-filter:blur(22px) saturate(140%);-webkit-backdrop-filter:blur(22px) saturate(140%);
-  box-shadow:0 24px 60px rgba(0,0,0,.28)
-}
-.lock-clock,.lock-date,.keypad,.pin-dots{display:none}
-.auth-logo{width:64px;height:64px;border-radius:16px;margin:0 auto 16px;background:rgba(255,255,255,.12);display:grid;place-items:center;overflow:hidden}
-.auth-logo img{width:100%;height:100%;object-fit:cover}
-.lock-title{font-size:34px;font-weight:700;margin:0 0 28px;text-align:center;letter-spacing:-.4px}
-.lock-sub{display:none}
-.pin{
-  width:100%;background:transparent;border:0;border-bottom:1px solid rgba(255,255,255,.55);
-  color:#fff;font-size:16px;padding:12px 2px 10px;outline:0;letter-spacing:2px;text-align:left;margin-bottom:18px;opacity:1;position:static;pointer-events:auto
-}
-.pin::placeholder{color:rgba(255,255,255,.78);letter-spacing:0}
-.pin:focus{border-bottom-color:#fff}
-.login-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:6px 0 22px;font-size:13px;color:rgba(255,255,255,.86)}
-.login-row label{display:flex;align-items:center;gap:8px;cursor:pointer}
-.login-row input{accent-color:#fff}
-#loginGate #authBtn{
-  display:block;width:100%;padding:14px;border-radius:10px;background:#fff;color:#111!important;font-weight:700;font-size:16px;border:0
-}
-#loginGate #authBtn:hover{filter:brightness(.96)}
-#authError{display:none;color:#ffd60a;font-size:13px;min-height:18px;text-align:center;margin-top:12px}
-#offHint{display:none;color:rgba(255,255,255,.78);font-size:12px;margin-top:14px;line-height:1.5;text-align:center}
-#app{display:none;flex:1;min-height:0;flex-direction:column;background:var(--bg)}
-.side{
-  display:none;width:232px;flex:none;position:sticky;top:0;height:100%;background:var(--side);
-  border-right:1px solid var(--border);flex-direction:column;padding:22px 14px;z-index:60
-}
-.brand{display:flex;align-items:center;gap:10px;padding:8px 10px 22px;font-weight:700;font-size:16px}
-.brand .lg{width:36px;height:36px;border-radius:12px;overflow:hidden;background:var(--primary-s);display:grid;place-items:center;color:var(--primary)}
-.brand img{width:100%;height:100%;object-fit:cover}.brand small{display:block;font-weight:500;color:var(--muted);font-size:11px}
-.nav{display:flex;flex-direction:column;gap:6px;flex:1}
-.nav button,.side-foot button{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border-radius:14px;color:#6b7280;font-weight:600;text-align:left}
-.nav button i,.side-foot button i{width:18px;text-align:center}
-.nav button:hover,.side-foot button:hover{background:var(--input);color:var(--text)}
-.nav button.active{background:var(--primary-s);color:var(--primary)}
-.side-foot{padding-top:10px}
-main{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;position:relative;overflow:hidden}
-.top{
-  position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;
-  padding:calc(env(safe-area-inset-top) + 14px) 22px 12px;background:var(--bg);background:color-mix(in srgb,var(--bg) 86%,transparent)
-}
-.top h2{font-size:26px;font-weight:700;letter-spacing:-.4px;flex:1;line-height:1.1}
-.ib{width:40px;height:40px;border-radius:12px;background:var(--card);display:grid;place-items:center;box-shadow:var(--shadow)}
-#menuBtn{display:grid}
-.content{padding:8px 18px 108px;width:100%;margin:0 auto;overflow:auto;flex:1;min-height:0}
-.page{display:none}.page.active{display:block;animation:iosIn .28s ease}
-.content,.page,.tw{min-width:0}
-@keyframes iosIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.overlay{display:none;position:absolute;inset:0;background:rgba(15,23,42,.28);z-index:55}
-.overlay.open{display:block}
-.side.open{display:flex;position:absolute;left:0;top:0;height:100%;box-shadow:var(--shadow)}
-.grid3{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-.card{
-  background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px 18px;
-  box-shadow:var(--shadow)
-}
-.stat{position:relative}
-.stat h4{font-size:13px;letter-spacing:0;text-transform:none;color:var(--muted);margin-bottom:10px;font-weight:600}
-.stat p{font-size:34px;font-weight:800;letter-spacing:-1px;color:var(--text)}
-.stat .si{position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:12px;display:grid;place-items:center;background:var(--primary-s);color:var(--primary)}
-.prow{display:grid;grid-template-columns:92px 1fr 44px;align-items:center;gap:10px;margin:10px 0}
-.pbg{height:7px;border-radius:8px;background:var(--input);overflow:hidden}.pbar{height:100%;width:0;border-radius:8px;transition:width .5s}
-.lbl{font-size:12px;font-weight:600;color:var(--muted)}.cnt{text-align:right;font-weight:700}
-.sec-t{font-size:20px;font-weight:700;letter-spacing:-.3px;margin-bottom:4px}.sec-s{color:var(--muted);font-size:13px;margin-bottom:14px}
-.tools{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.tools .btn{justify-content:flex-start;padding:14px 14px;border-radius:16px}
-.bar{display:flex;gap:10px;margin-bottom:12px;align-items:center}
-.sw{position:relative;flex:1}.sw i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)}
-.inp{width:100%;padding:12px 14px;border-radius:14px;border:0;background:var(--input);outline:0;font-size:16px}
-.inp:focus{box-shadow:0 0 0 3px var(--primary-s)}
-.sw .inp{padding-left:40px;height:44px;background:var(--input);border-radius:12px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border-radius:14px;font-weight:600;font-size:14px;background:var(--input);transition:.15s}
-.btn:active{transform:scale(.97);opacity:.86}
-.btn-p{background:var(--primary);color:var(--on-primary)!important}
-.btn-d{color:var(--bad);background:rgba(255,69,58,.12)}
-.btn:disabled{opacity:.55}
-table{width:100%;border-collapse:collapse}
-th{font-size:11px;letter-spacing:.5px;color:var(--muted);text-align:left;padding:10px 14px;border-bottom:1px solid var(--hairline);white-space:nowrap}
-td{padding:12px 14px;border-bottom:1px solid var(--hairline);vertical-align:middle}
-.tw{overflow:hidden;padding:0;background:transparent;border:0}
-.key-text{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12px;color:var(--muted);max-width:280px;word-break:break-word}
-.tag{padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;background:var(--input);color:var(--muted)}
-.tag-gp{background:rgba(100,210,255,.18);color:var(--gp)}.tag-robi{background:rgba(255,69,58,.16);color:var(--robi)}.tag-bl{background:rgba(255,214,10,.18);color:var(--bl)}
-.acts{display:flex;gap:6px;justify-content:center}
-.op{padding:8px 12px;border-radius:999px;font-size:12px;font-weight:700;background:var(--input)}
-.op.v{color:var(--primary);background:var(--primary-s)}
-.ipc{background:var(--input);padding:4px 8px;border-radius:8px;font-weight:600}
-.more{text-align:center;color:var(--muted);padding:16px}
-.tag-ko{background:rgba(255,159,10,.18);color:#ff9f0a;white-space:nowrap}
-.ko-row td.id{line-height:1.7}
-.modal{position:absolute;inset:0;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.46);z-index:90;padding:0}
-.modal.open{display:flex}
-.phone:has(.modal.open) .content{overflow:hidden}
-.sheet{
-  background:var(--fill);border:1px solid var(--border);border-radius:28px 28px 0 0;width:100%;
-  max-height:88%;overflow:auto;overflow-anchor:none;padding:10px 20px 36px;animation:sheetUp .32s cubic-bezier(.32,.72,0,1)
-}
-.sheet::before{content:"";display:block;width:36px;height:5px;border-radius:99px;background:var(--muted);opacity:.45;margin:4px auto 14px}
-.sheet h3{font-size:20px;font-weight:700;letter-spacing:-.3px;margin-bottom:14px;text-align:center}
-#editSection .sheet{
-  height:88%;max-height:88%;min-height:72%;display:flex;flex-direction:column;
-  overflow:hidden;padding-bottom:18px
-}
-#editSection .sheet h3{flex:none}
-#inputGrid{display:grid;grid-template-columns:1fr;gap:10px;overflow:auto;min-height:200px;flex:1;padding-bottom:4px;overflow-anchor:none;-webkit-overflow-scrolling:touch}
-textarea.inp{grid-column:1/-1;min-height:90px;max-height:140px;resize:vertical}
-#editSection .mf{flex:none;margin-top:12px;padding-top:8px;background:var(--fill)}
-.mf{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}.mf .btn{flex:1;min-width:90px;padding:13px}
-.kv{display:flex;justify-content:space-between;gap:16px;padding:13px 0;border-bottom:1px solid var(--hairline)}
-.kv span{color:var(--muted);flex:none}.kv b{text-align:right;word-break:break-word}.kv.full{display:block;border:0}
-.kv pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;margin-top:8px;padding:12px;border-radius:14px;background:var(--input);line-height:1.5}
-.kv a{color:var(--primary);font-weight:700;text-decoration:none}
-.about{color:var(--muted);font-size:12px;line-height:1.8}
-::-webkit-scrollbar{width:0;height:0}
-table,tbody,tr,td{display:block}thead{display:none}
-tr{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:14px 14px;margin-bottom:10px}
-td{border:0;padding:7px 0;display:flex;justify-content:space-between;align-items:center;gap:14px;text-align:right}
-td::before{content:attr(data-label);color:var(--muted);font-size:12px;font-weight:600;flex:none;text-align:left}
-td.id{font-size:17px;font-weight:700;color:var(--text);justify-content:flex-start;text-align:left;padding-bottom:8px}td.id::before{display:none}
-td.ac{padding-top:10px}td.ac::before{display:none}.acts{width:100%}.acts .op{flex:1;padding:11px}
-.key-text{max-width:none}
-.bar{flex-wrap:wrap}
-#pg-sites .bar .btn.write-only{display:none}
-body[data-role=user] .admin-only,body[data-role=offline] .admin-only,body[data-role=offline] .write-only{display:none!important}
-.toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%);z-index:120;display:none;align-items:center;gap:12px;background:var(--card);border:1px solid var(--bad);border-radius:16px;padding:12px 14px;box-shadow:var(--shadow);max-width:calc(100% - 28px);backdrop-filter:blur(20px)}
-.pf{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px}
-.pmsg{font-size:13px;min-height:18px;margin-top:8px}
-.logrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 0;border-bottom:1px solid var(--hairline);font-size:13px;align-items:center}
-.logrow .lg-t{color:var(--muted)}.logrow .lg-d{color:var(--muted);word-break:break-word;grid-column:1/-1}
-.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.filters select.inp{width:auto;min-width:calc(50% - 4px);flex:1;height:40px;padding:0 12px;border-radius:12px}
-.filters .btn{width:100%}
-.chips{display:none;margin:-4px 0 12px;flex-wrap:wrap;gap:8px;align-items:center}
-.chip{padding:7px 12px;border-radius:999px;background:var(--input);font-size:12px;font-weight:600}
-.chip.x{color:var(--bad)}
-#pg-map.active{display:flex;flex-direction:column;min-height:100%}
-#mapBox{flex:1;min-height:280px;height:52vh;border-radius:22px;border:1px solid var(--border);isolation:isolate;overflow:hidden}
-.mk{display:block;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35)}
-.tabbar{
-  position:absolute;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:65;
-  display:flex;align-items:center;justify-content:space-around;
-  padding:8px 6px 10px;border-radius:22px;background:var(--tabbar);
-  border:1px solid var(--hairline);box-shadow:var(--shadow)
-}
-.tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:10px;font-weight:600;padding:4px 0}
-.tabbar button i{font-size:18px}
-.tabbar button.active{color:var(--primary)}
-.fab{
-  position:absolute;right:22px;bottom:96px;z-index:50;width:56px;height:56px;border-radius:50%;
-  background:var(--primary);color:var(--on-primary);display:none;place-items:center;font-size:20px;
-  box-shadow:0 10px 24px rgba(10,132,255,.4)
-}
-body.sites-on .fab.write-only{display:grid}
-body[data-role=offline] .fab,body[data-role=user] .fab.admin-only{display:none!important}
-@keyframes sheetUp{from{transform:translateY(40%)}to{transform:none}}
-@media(min-width:980px){
-  .stage{padding:18px;background:var(--shell)}
-  .phone{flex:none;max-width:1180px;width:100%;height:min(860px,calc(100dvh - 36px));margin:0 auto;border-radius:28px;border:1px solid var(--border);box-shadow:var(--shadow);flex-direction:row}
-  #app{flex-direction:row;min-width:0}
-  .tw{max-width:100%}
-  .filters{flex-wrap:nowrap;align-items:center}
-  .filters select.inp{min-width:0;flex:1 1 0;width:auto}
-  .filters .btn{width:auto;flex:none;white-space:nowrap}
-  .side{display:flex}
-  #menuBtn{display:none}
-  .tabbar{display:none}
-  .content{padding:8px 24px 28px}
-  .grid3{grid-template-columns:repeat(3,1fr)}
-  .top{padding:18px 24px 8px}
-  .lock-inner{max-width:430px}
-  body.sites-on .fab.write-only{display:none}
-  #pg-sites .bar .btn.write-only{display:inline-flex}
-  .modal{align-items:center;padding:18px}
-  .sheet{border-radius:24px;max-height:calc(100% - 24px)}
-  #editSection .sheet{height:80%;min-height:0;max-height:calc(100% - 24px)}
-}
-</style>
+<meta name="theme-color">
+<meta name="description" content="Activity Tracker for S.M. FAISAL AHMED — daily reports, overtime, attendance and payroll.">
+<title>Activity Tracker · S.M. FAISAL AHMED</title>
+<!-- Favicon Link -->
+<link rel="icon" type="image/png" href="favicon.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script>try{var reportProThemes=['light-lemon','light-olive','light-peach','light-orange','light-mint','dark-neon'];var reportProTheme=localStorage.getItem('reportpro-theme');if(!reportProThemes.includes(reportProTheme)){var oldReportProTheme=localStorage.getItem('theme');reportProTheme=oldReportProTheme==='dark'?'dark-neon':'light-mint';localStorage.setItem('reportpro-theme',reportProTheme);localStorage.removeItem('theme')}document.documentElement.setAttribute('data-theme',reportProTheme)}catch(e){document.documentElement.setAttribute('data-theme','light-mint')}</script>
 </head>
-<body data-theme="light">
-<script>try{var _t=localStorage.getItem('phoenix_theme');if(_t&&/^(dark|light|sky|mint|sand)$/.test(_t))document.body.setAttribute('data-theme',_t);else document.body.setAttribute('data-theme','light')}catch(e){}</script>
-<div class="stage">
-<div class="phone" id="phone">
-<div id="loginGate">
- <div class="lock-bg"></div>
- <div class="lock-inner">
-  <div class="auth-logo"><img src="./bts-logo.jpg" alt="" onerror="this.replaceWith(Object.assign(document.createElement('i'),{className:'fas fa-shield-halved'}))"></div>
-  <div class="lock-title">Login</div>
-  <input type="password" id="pinIn" class="pin" inputmode="numeric" maxlength="12" autocomplete="current-password" placeholder="Enter your PIN" oncontextmenu="return false;" onkeydown="if(event.key==='Enter')verifyAccess()">
-  <div class="login-row">
-   <label><input type="checkbox" id="rememberPin"> Remember me</label>
-   <span>BTS Data HUB</span>
-  </div>
-  <button type="button" id="authBtn" class="btn btn-p" onclick="verifyAccess()">Log In</button>
-  <div id="authError"></div>
-  <div id="offHint">Offline: last saved data is available in view-only mode after a previous online login.</div>
- </div>
-</div>
+<body>
+<a class="skip-link" href="#app">Skip to app</a>
 
-<div id="app">
- <div class="overlay" id="overlay" onclick="closeNav()"></div>
- <aside class="side" id="side">
-  <div class="brand"><div class="lg"><img src="./bts-logo.jpg" alt="" onerror="this.style.display='none'"></div><div>BTS Data<small>HUB</small></div></div>
-  <nav class="nav">
-   <button data-p="dash" onclick="showPage('dash')" class="active"><i class="fas fa-square-poll-vertical"></i>Dashboard</button>
-   <button data-p="sites" onclick="showPage('sites')"><i class="fas fa-tower-cell"></i>Sites</button>
-   <button class="write-only" data-p="map" onclick="showPage('map')"><i class="fas fa-map"></i>Map</button>
-   <button class="admin-only" data-p="data" onclick="showPage('data')"><i class="fas fa-square-plus"></i>Data</button>
-   <button data-p="set" onclick="showPage('set')"><i class="fas fa-gear"></i>Settings</button>
+<!-- ── Auth gate ─────────────────────────────────────── -->
+<section id="authGate" class="auth-wrap">
+  <button class="btn btn-icon auth-theme-btn" type="button" data-act="theme" aria-label="Switch theme" title="Switch theme">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 14.5A8.5 8.5 0 1110.5 3 7 7 0 0021 14.5z"/></svg>
+  </button>
+  <div class="auth-orb auth-orb-a" aria-hidden="true"></div>
+  <div class="auth-orb auth-orb-b" aria-hidden="true"></div>
+  <div class="auth-shell">
+  <div class="auth-card">
+    <div class="brand" style="margin-bottom:22px">
+      <img class="brand-logo-img" src="logo.jpg" alt="Logo" width="36" height="36">
+     <div>Activity Tracker<small>Secure access</small></div>
+    </div>
+    <h1>Welcome back</h1>
+    <p>Sign in with an authorised account only.</p>
+    <form id="loginForm">
+      <div class="field"><label for="loginEmail">Work email</label><input id="loginEmail" type="email" autocomplete="username" required></div>
+      <div class="field"><label for="loginPassword">Password</label><input id="loginPassword" type="password" autocomplete="current-password" required></div>
+      <div class="auth-actions">
+        <button class="btn btn-primary" type="submit" id="loginBtn">Sign in</button>
+        <button class="btn" type="button" id="resetPasswordBtn">Reset password</button>
+      </div>
+      <div id="authError" class="auth-error" role="alert"></div>
+    </form>
+    <div class="auth-note">No public sign-up. An administrator must create accounts in Firebase Authentication.</div>
+  </div>
+    <aside class="auth-brand-panel" aria-hidden="true">
+      <div class="auth-panel-brand"><img class="brand-logo-img" src="logo.jpg" alt="" width="36" height="36"><span>Activity Tracker</span></div>
+     <div style="display: flex; align-items: center; justify-content: center; height: 100%; padding: 20px;">
+        <img src="logo.jpg" alt="Activity Illustration" style="max-width: 80%; height: auto; border-radius: 16px; object-fit: contain; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ── Main app ───────────────────────────────────────── -->
+<div id="app" hidden>
+
+  <!-- Horizon-style app shell -->
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Primary navigation">
+      <div class="sidebar-brand"><img class="brand-logo-img" src="logo.jpg" alt="S.M. FAISAL AHMED logo" width="36" height="36"><div>Activity Tracker<small>S.M. FAISAL AHMED</small></div></div>
+      <div class="sidebar-divider" aria-hidden="true"></div>
+      <nav class="tabs sidebar-tabs" role="tablist" aria-label="Sections">
+        <button role="tab" data-act="tab" data-tab="dashboard" aria-selected="true"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg><span>Dashboard</span></button>
+        <button role="tab" data-act="tab" data-tab="report" aria-selected="false"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg><span>Report</span></button>
+        <button role="tab" data-act="tab" data-tab="history" aria-selected="false"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>History</span></button>
+        <button role="tab" data-act="tab" data-tab="analytics" aria-selected="false"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20V5M4 20h17"/><rect x="7" y="12" width="3" height="6" rx="1"/><rect x="13" y="8" width="3" height="10" rx="1"/><rect x="19" y="4" width="3" height="14" rx="1"/></svg><span>Analytics</span></button>
+        <button role="tab" data-act="tab" data-tab="calendar" aria-selected="false"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Calendar</span></button>
+        <button role="tab" data-act="tab" data-tab="money" aria-selected="false"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>Set Rate</span></button>
+      </nav>
+    </aside>
+    <div class="app-main">
+      <header class="topbar">
+        <div class="topbar-in">
+          <label class="sidebar-toggle" aria-label="Open navigation">
+            <input class="sidebar-toggle-check" type="checkbox" aria-label="Toggle navigation drawer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </label>
+          <div class="navbar-heading"><div class="breadcrumb"><span>Pages</span><span aria-hidden="true"> / </span><span class="current-view-name">Dashboard</span></div><h1 class="current-page-title">Dashboard</h1></div>
+          <div class="navbar-controls">
+            <span id="syncPill" class="pill">Connecting</span><span id="currentUser" class="user-email" title="Signed-in account"></span><button class="btn btn-sm" id="signOutBtn" type="button">Sign out</button>
+            <details class="menu" id="menu"><summary class="btn">Export &amp; backup ▾</summary><div class="menu-pop"><button data-act="pdf">Download PDF</button><button data-act="excel">Download Excel</button><button data-act="print">Print</button><hr><button data-act="json-backup">Backup all data (JSON)</button><button data-act="restore">Restore from Excel or JSON</button><hr><button data-act="sync">Sync from cloud now</button></div></details>
+            <button class="btn btn-icon" id="themeBtn" data-act="theme" aria-label="Switch theme" title="Switch theme"><svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 14.5A8.5 8.5 0 1110.5 3 7 7 0 0021 14.5z"/></svg></button>
+          </div>
+        </div>
+      </header>
+      <!-- Main content -->
+  <main class="container">
+
+    <!-- DASHBOARD -->
+    <section id="view-dashboard" class="dash" hidden>
+      <div class="dash-top">
+        <div><p class="page-kicker">Overview</p><h2 class="card-title">My Dashboard</h2></div>
+        <div class="field dash-year"><label for="dashYear">Year</label><select id="dashYear" aria-label="Dashboard year"></select></div>
+      </div>
+      <div id="personalDashboard" class="dash-hero-grid"></div>
+      <div>
+        <div class="dash-block-head"><h3>Year summary</h3><span id="dashYearTag" class="muted"></span></div>
+        <div class="dash-stats" id="dashStats"></div>
+      </div>
+      <div class="dash-charts">
+        <div class="card dash-chart">
+          <div class="dash-card-head"><div><p class="page-kicker">Annual activity</p><h2 class="card-title">Monthly overtime</h2></div></div>
+          <div class="bars" id="dashboardBars" role="img" aria-label="Monthly overtime overview"></div>
+        </div>
+        <div class="card dash-chart">
+          <div class="dash-card-head"><div><p class="page-kicker">Payroll</p><h2 class="card-title">Salary-month income</h2></div></div>
+          <div class="bars" id="incomeBars" role="img" aria-label="Income per salary month"></div>
+          <p class="muted small-note">Salary, OT from two months earlier, government holiday allowance & The current salary month is highlighted.</p>
+        </div>
+      </div>
+      <div class="card dash-table-card">
+        <div class="dash-card-head"><div><p class="page-kicker">Latest activity</p><h2 class="card-title">Recent reports</h2></div><button class="btn btn-sm" data-act="tab" data-tab="history">View all</button></div>
+        <div class="tbl-wrap"><table class="dash-table"><thead><tr><th>Date</th><th>Shift</th><th>Time</th><th>Activities</th><th>OT</th></tr></thead><tbody id="dashboardRecent"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- REPORT -->
+    <section id="view-report" class="stack" hidden>
+      <div class="card toolbar">
+        <div class="report-heading">
+          <p class="page-kicker">Daily log</p>
+          <h2 class="card-title">Activity report</h2>
+        </div>
+        <button class="btn btn-icon" data-act="prev" title="Previous report">‹</button>
+        <button class="btn btn-icon" data-act="next" title="Next report">›</button>
+        <div class="field"><input type="date" id="gotoDate" aria-label="Go to date" title="Go to a saved report by date"></div>
+        <span id="dirtyChip" class="chip" hidden>Unsaved changes</span>
+        <div class="spacer"></div>
+        <button class="btn" data-act="new">New report</button>
+        <button class="btn btn-primary" data-act="save" title="Ctrl + S">Save report</button>
+      </div>
+
+      <div id="reportForm" class="stack">
+        <input type="hidden" id="editingId">
+        <div class="card form-card">
+          <div class="form-sections">
+            <div class="form-section">
+              <h3 class="form-section-title">Employee</h3>
+              <div class="field"><label for="assignedBy">SC head</label><input id="assignedBy"></div>
+              <div class="field"><label for="userName">Name</label><input id="userName"></div>
+              <div class="grid g2">
+                <div class="field"><label for="hrId">HR ID</label><input id="hrId"></div>
+                <div class="field"><label for="userDesig">Designation</label><input id="userDesig"></div>
+              </div>
+            </div>
+            <div class="form-section">
+              <h3 class="form-section-title">Duty</h3>
+              <div class="grid g3 time-grid">
+                <div class="field"><label for="reportDate">Date</label><input type="date" id="reportDate"></div>
+                <div class="field"><label for="startTime">From</label><input type="time" id="startTime"></div>
+                <div class="field"><label for="endTime">To</label><input type="time" id="endTime"></div>
+              </div>
+              <div class="field"><span class="lbl">Shift</span>
+                <div class="shift-row">
+                  <div class="seg" role="radiogroup" aria-label="Shift">
+                    <label><input type="radio" name="shift" id="shiftDay" checked>Day</label>
+                    <label><input type="radio" name="shift" id="shiftNight">Night</label>
+                    <label><input type="radio" name="shift" id="shiftOff">Off duty</label>
+                  </div>
+                  <select id="offType" aria-label="Off duty type" hidden>
+                    <option value="Weekly Holiday">Weekly Holiday</option>
+                    <option value="Goverment Holiday">Government holiday</option>
+                    <option value="Shifting">Shifting</option>
+                    <option value="Duty Shifting">Duty Shifting</option>
+                    <option value="Sick Leave">Sick leave</option>
+                    <option value="Plan leave">Plan leave</option>
+                    <option value="Anual leave">Annual leave</option>
+                    <option value="Casual leave">Casual leave</option>
+                    <option value="Off day">Off day</option>
+                  </select>
+                </div>
+              </div>
+              <div class="grid g2 duty-extra">
+                <div class="field"><label for="otHours">Overtime today</label><input id="otHours" readonly value="0 hrs"></div>
+                <label class="inline-check holiday-duty-check"><input type="checkbox" id="governmentHolidayDuty"> Government holiday duty (৳900 fixed allowance)</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="entries" class="stack"></div>
+        <button class="btn add-activity" data-act="add-row">+ Add activity</button>
+      </div>
+    </section>
+
+    <!-- HISTORY -->
+    <section id="view-history" class="stack" hidden>
+      <div class="card stack history-filter">
+        <div class="dash-card-head">
+          <div><p class="page-kicker">Archive</p><h2 class="card-title">Find reports</h2></div>
+          <button class="btn btn-sm" data-act="reset-filters">Reset filters</button>
+        </div>
+        <div class="filter-grid">
+          <div class="field field-search"><label for="hSearch">Search</label><input id="hSearch" type="search" placeholder="Site, client, activity…"></div>
+          <div class="field"><label for="hShift">Shift</label>
+            <select id="hShift">
+              <option value="all">All shifts</option>
+              <option value="day">Day</option>
+              <option value="night">Night</option>
+              <option value="leave">Leave</option>
+              <option value="off">Off / holiday</option>
+            </select>
+          </div>
+          <div class="field"><label for="dateFrom">From</label><input type="date" id="dateFrom"></div>
+          <div class="field"><label for="dateTo">To</label><input type="date" id="dateTo"></div>
+        </div>
+        <div class="filter-stats">
+          <div class="fstat"><span>Reports found</span><b id="sCount">0</b></div>
+          <div class="fstat"><span>Total overtime</span><b id="sOt">0 hrs</b></div>
+          <div class="fstat"><span>Range</span><b id="sRange">All dates</b></div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <h2 class="card-title">Saved reports</h2>
+        <div class="spacer"></div>
+        <button class="btn btn-sm" id="selBtn" data-act="select-all">Select all</button>
+        <button class="btn btn-sm btn-danger" id="delSelBtn" data-act="del-selected" disabled>Delete selected</button>
+      </div>
+      <div id="historyList" class="stack"></div>
+    </section>
+
+    <!-- ANALYTICS -->
+    <section id="view-analytics" class="stack" hidden>
+      <div class="card stack">
+        <div class="toolbar">
+          <div>
+            <p class="page-kicker">Insights</p>
+            <h2 class="card-title">Monthly overtime</h2>
+          </div>
+          <div class="spacer"></div>
+          <div class="field" style="width:120px"><select id="yearSel" aria-label="Year"></select></div>
+        </div>
+        <div class="stats" id="yearStats"></div>
+        <div class="bars" id="bars" role="img" aria-label="Overtime hours per month"></div>
+      </div>
+      <div class="card tbl-wrap">
+        <table class="data">
+          <thead><tr><th>Month</th><th>Day</th><th>Night</th><th>Leave</th><th>Off</th><th>Overtime</th></tr></thead>
+          <tbody id="monthRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ATTENDANCE CALENDAR -->
+    <section id="view-calendar" class="stack" hidden>
+      <div class="card stack">
+        <div class="toolbar">
+          <div>
+            <p class="page-kicker">Roster</p>
+            <h2 class="card-title">Attendance &amp; Duty Calendar</h2>
+          </div>
+          <span class="spacer"></span>
+          <button class="btn btn-icon" id="calPrev" type="button" aria-label="Previous month">‹</button>
+          <input type="month" id="calMonth" aria-label="Calendar month" style="max-width:160px">
+          <button class="btn btn-icon" id="calNext" type="button" aria-label="Next month">›</button>
+        </div>
+        <div class="stats" id="calendarSummary"></div>
+        <div class="calendar-grid" id="calendarGrid" aria-label="Monthly duty calendar"></div>
+        <p id="missingDates" class="muted small-note"></p>
+        <div class="calendar-legend">
+          <span><i class="legend-dot day"></i>Day</span><span><i class="legend-dot night"></i>Night</span><span><i class="legend-dot off"></i>Off</span><span><i class="legend-dot leave"></i>Leave</span><span><i class="legend-dot missing"></i>Missing report</span>
+        </div>
+      </div>
+      <div class="card stack">
+        <h2 class="card-title">Expected duty weekdays</h2>
+        <p class="muted small-note">Select your normal workdays. Only selected weekdays without a saved report will be flagged as Missing. No work schedule is assumed by default.</p>
+        <div class="weekday-picks" id="expectedWeekdays">
+          <label><input type="checkbox" value="0"> Sunday</label><label><input type="checkbox" value="1"> Monday</label><label><input type="checkbox" value="2"> Tuesday</label><label><input type="checkbox" value="3"> Wednesday</label><label><input type="checkbox" value="4"> Thursday</label><label><input type="checkbox" value="5"> Friday</label><label><input type="checkbox" value="6"> Saturday</label>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAYROLL & APPRAISAL -->
+    <section id="view-money" class="stack" hidden>
+      <div class="card stack">
+        <div class="toolbar"><div><p class="page-kicker">Payroll</p><h2 class="card-title">Salary &amp; OT Payout</h2></div><span class="spacer"></span><button class="btn btn-icon" id="moneyPrev" type="button" aria-label="Previous salary month">‹</button><input type="month" id="moneyMonth" aria-label="Salary month" style="max-width:160px"><button class="btn btn-icon" id="moneyNext" type="button" aria-label="Next salary month">›</button></div>
+        <div id="moneyPayoutSummary"></div>
+        <p id="financeSyncStatus" class="muted small-note">Finance data is stored separately from daily reports.</p>
+      </div>
+      <div class="card stack">
+        <div><p class="page-kicker">Rates</p><h2 class="card-title">Appraisal &amp; Rate History</h2></div>
+        <p class="muted small-note">Add a new effective date after appraisal. Salary and hourly OT rate are both versioned; previous work-month OT retains its historic rate. Salary is not prorated for a mid-month appraisal.</p>
+        <form id="profileForm" class="appraisal-form">
+          <div class="field"><label for="profileDate">Effective from</label><input id="profileDate" name="effectiveFrom" type="date" required></div>
+          <div class="field"><label for="profileSalary">Monthly salary (৳)</label><input id="profileSalary" name="salary" type="number" min="0" step="0.01" placeholder="Enter salary" required></div>
+          <div class="field"><label for="profileOtRate">OT rate / hour (৳)</label><input id="profileOtRate" name="otRate" type="number" min="0" step="0.01" value="235" required></div>
+          <div class="field field-action"><button class="btn btn-primary" type="submit">Save appraisal rate</button></div>
+        </form>
+        <div id="profileList" class="finance-list"></div>
+      </div>
+    </section>
+
+  </main>
+
+    </div><!-- /.app-main -->
+  </div><!-- /.app-shell -->
+
+  <!-- Mobile bottom nav -->
+  <nav class="bottom-nav" aria-label="Mobile navigation">
+    <div class="bottom-nav-inner">
+      <button class="bnav-btn" data-act="tab" data-tab="dashboard" aria-selected="true">
+        <span class="bnav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </span>
+        Dashboard
+      </button>
+      <button class="bnav-btn" data-act="tab" data-tab="report" aria-selected="false">
+        <span class="bnav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </span>
+        Report
+      </button>
+      <button class="bnav-btn" data-act="tab" data-tab="history" aria-selected="false">
+        <span class="bnav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+        </span>
+        History
+      </button>
+      <button class="bnav-btn" data-act="tab" data-tab="analytics" aria-selected="false">
+        <span class="bnav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5"/><path d="M4 19h16"/><rect x="7" y="10" width="3" height="6" rx="1"/><rect x="12" y="7" width="3" height="9" rx="1"/><rect x="17" y="12" width="3" height="4" rx="1"/></svg>
+        </span>
+        Analytics
+      </button>
+      <button class="bnav-btn" data-act="tab" data-tab="calendar" aria-selected="false">
+        <span class="bnav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </span>
+        Calendar
+      </button>
+      <button class="bnav-btn" data-act="tab" data-tab="money" aria-selected="false">
+        <span class="bnav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </span>
+        Set Rate
+      </button>
+    </div>
   </nav>
-  <div class="side-foot"><button onclick="logout()"><i class="fas fa-right-from-bracket"></i>Logout</button></div>
- </aside>
- <main>
 
-<!-- 🔽 script টি nav ট্যাগের বাইরে যেকোনো জায়গায় আলাদা করে রাখতে পারেন 🔽 -->
- <script>
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C'))) {
-            e.preventDefault();
-        }
-    });
- </script>
-
-  <div class="top">
-   <button class="ib" id="menuBtn" onclick="openNav()" aria-label="Menu"><i class="fas fa-bars"></i></button>
-   <h2 id="pageTitle">Dashboard</h2>
-   <span class="tag" id="roleTag"></span>
-   <button class="ib" onclick="toggleTheme()" aria-label="Theme"><i class="fas fa-moon" id="themeIcon"></i></button>
- </div>
- <div class="content">
-   <section class="page active" id="pg-dash">
-    <div class="grid3">
-     <div class="card stat"><span class="si"><i class="fas fa-broadcast-tower"></i></span><h4>Total Sites</h4><p id="statTotal">0</p></div>
-     <div class="card stat"><span class="si"><i class="fas fa-key"></i></span><h4>Total Keys</h4><p id="statKeysCount">0</p><small id="statKoSub"></small></div>
-     <div class="card stat"><span class="si"><i class="fas fa-clock"></i></span><h4>Last Sync</h4><p id="statTime" class="mono">--:--</p></div>
-     <div class="card stat"><span class="si"><i class="fas fa-circle-exclamation"></i></span><h4>Key Not Found</h4><p id="statNoKey">0</p></div>
-     <div class="card stat"><span class="si"><i class="fas fa-location-dot"></i></span><h4>Location Not Found</h4><p id="statNoLoc">0</p></div>
-     <div class="card stat click" onclick="goKO()" title="Key-only site gulo dekhun"><span class="si"><i class="fas fa-link-slash"></i></span><h4>Key-only</h4><p id="statKO">0</p></div>
-    </div>
-    <div class="card">
-     <div class="sec-t">Clients</div>
-     <div id="clientBars"></div>
-    </div>
-    <div class="grid2 admin-only">
-     <div class="card admin-only">
-      <div class="dh"><div class="sec-t" style="margin:0">Recent login</div><button class="btn" onclick="loadDashLogs(true)" aria-label="Refresh"><i class="fas fa-rotate"></i></button></div>
-      <div id="dashLogin"><div class="more">Loading...</div></div>
-     </div>
-     <div class="card admin-only">
-      <div class="sec-t">Last key update</div>
-      <div id="dashKey"><div class="more">Loading...</div></div>
-     </div>
-    </div>
-   </section>
-
-   <section class="page" id="pg-sites">
-    <div class="bar">
-     <div class="sw"><i class="fas fa-search"></i><input type="text" id="searchInput" class="inp" placeholder="Search site code, IP, node..." oninput="debounceFilter();recentShow()" onfocus="recentShow()" onblur="recentBlur()" onchange="saveRecent()" onkeydown="if(event.key==='Enter'){saveRecent();this.blur()}" autocomplete="off"></div>
-     <button onclick="toggleForm('add')" class="btn btn-p write-only"><i class="fas fa-plus"></i> New Entry</button>
-    </div>
-    <div class="chips" id="recentBox"></div>
-    <div class="filters" id="filtersSites"></div>
-    <div class="card tw"><table>
-     <thead><tr><th>IDENTITY</th><th>IP</th><th>MODEL</th><th>LOCATION</th><th>CLIENT</th><th>KEY INFO</th><th style="text-align:center">ACTION</th></tr></thead>
-     <tbody id="fullTable"></tbody>
-    </table></div>
-   </section>
-
-   <section class="page" id="pg-map">
-    <div class="filters" id="filtersMap"></div>
-    <div class="sec-s" id="mapInfo"></div>
-    <div id="mapBox"></div>
-   </section>
-
-   <section class="page" id="pg-data">
-    <input type="file" id="fileInputData" hidden accept=".xlsx,.xls,.csv">
-    <input type="file" id="fileInputKey" hidden accept=".xlsx,.xls,.csv">
-    <div class="card" style="margin-bottom:14px">
-     <div class="sec-t">Import</div><div class="sec-s">Smart merge from Excel / CSV (based on site ID). First it will show a preview, then auto-backup will be sent to Telegram.</div>
-     <div class="tools">
-      <button class="btn" onclick="$('fileInputData').click()"><i class="fas fa-file-import"></i> Import Data</button>
-      <button class="btn" onclick="$('fileInputKey').click()"><i class="fas fa-key"></i> Import Key</button>
-     </div>
-    </div>
-    <div class="card" style="margin-bottom:14px">
-     <div class="sec-t">Backup</div><div class="sec-s">Master PIN Needed</div>
-     <div class="tools">
-      <button class="btn" onclick="exportMaster()"><i class="fas fa-file-export"></i> Backup Data</button>
-      <button class="btn" onclick="exportKeys()"><i class="fas fa-file-medical"></i> Backup Key</button>
-      <button class="btn" onclick="pushToTelegram()"><i class="fas fa-paper-plane"></i> Push to Telegram</button>
-     </div>
-     <div id="pushStatus" class="sec-s" style="margin:12px 0 0"></div>
-    </div>
-    <div class="card">
-      <div class="sec-t" style="color:var(--bad)">Danger zone</div><div class="sec-s">Master PIN needed. Permanent action.</div>
-     <div class="tools">
-      <button class="btn btn-d" onclick="wipeData()"><i class="fas fa-trash"></i> Wipe Data</button>
-      <button class="btn btn-d" onclick="wipeKeyData()"><i class="fas fa-key"></i> Wipe Key Data</button>
-     </div>
-    </div>
-   </section>
-
-   <section class="page" id="pg-set">
-    <div class="card" style="margin-bottom:14px">
-     <div class="sec-t">Appearance</div><div class="sec-s">Select your theme</div>
-     <div class="swrow" id="swRow"></div>
-     <button class="btn" onclick="toggleTheme()"><i class="fas fa-circle-half-stroke"></i> Next theme</button>
-    </div>
-    <div class="card" style="margin-bottom:14px">
-     <div class="sec-t">Session</div><div class="sec-s">Browser Auto logout</div>
-     <button class="btn btn-d" onclick="logout()"><i class="fas fa-right-from-bracket"></i> Logout</button>
-      <button class="btn" onclick="clearOffline()" style="margin-left:8px"><i class="fas fa-eraser"></i> Clear offline data</button>
-    </div>
-    <div class="card" style="margin-bottom:14px">
-     <div class="sec-t">Auto logout</div><div class="sec-s">Auto Log Out After</div>
-     <select id="idleSel" class="inp" style="max-width:220px" onchange="saveIdle()">
-      <option value="5">5 minutes</option><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">60 minutes</option>
-     </select>
-    </div>
-    <div class="card admin-only" style="margin-bottom:14px">
-     <div class="sec-t">Manage Users & PINs</div>
-     <div class="sec-s">For Every User Unique 6-digit PIN.</div>
-     <div class="pf">
-      <input type="text" id="newUserName" class="inp" placeholder="User Name / ID" autocomplete="off">
-      <input type="password" id="newUserPin" class="inp" inputmode="numeric" maxlength="6" placeholder="6-digit PIN">
-      <select id="newUserRole" class="inp">
-       <option value="user">User (Viewer/Editor)</option>
-       <option value="admin">Admin</option>
-      </select>
-     </div>
-     <input type="password" id="adminAuthPin" class="inp" inputmode="numeric" maxlength="6" placeholder="Your Admin PIN to confirm" style="margin-bottom:10px">
-     <button class="btn btn-p" onclick="addNewUser()">Add / Update User</button>
-     <div id="userMgmtMsg" class="pmsg"></div>
-     <div class="sec-t" style="margin-top:16px">Users</div><div id="userList"></div>
-    </div>
-    <div class="card admin-only" style="margin-bottom:14px">
-     <div class="sec-t">Activity log</div><div class="sec-s">Latest 100 record</div>
-     <div class="bar" style="flex-wrap:wrap">
-      <input type="text" id="logSearch" class="inp" placeholder="Search site / detail" oninput="renderLogs()" style="flex:1;min-width:160px">
-      <select id="logAction" class="inp" onchange="renderLogs()" style="width:auto"></select>
-      <select id="logRole" class="inp" onchange="renderLogs()" style="width:auto"><option value="">All roles</option><option value="admin">admin</option><option value="user">user</option><option value="none">none</option><option value="system">system</option></select>
-      <button class="btn" onclick="loadLogs()"><i class="fas fa-rotate"></i> Refresh</button>
-     </div>
-     <div id="logList"></div>
-    </div>
-    <div class="card admin-only" style="margin-bottom:14px">
-     <div class="sec-t">Auto backup (Telegram)</div><div class="sec-s">At 2 AM Dhaka time, it will send Master + Keys Excel to Telegram.</div>
-     <select id="bkFreq" class="inp" style="max-width:220px" onchange="bkSave()"><option value="off">Off</option><option value="daily">Daily</option><option value="weekly">Weekly (Sunday)</option></select>
-     <div id="bkInfo" class="sec-s" style="margin:10px 0"></div>
-     <button class="btn" onclick="bkNow()"><i class="fas fa-cloud-arrow-up"></i> Backup now</button>
-    </div>
-     <div class="card about"><b>PHOENIX V4.7</b><br><span class="status"><i class="fas fa-circle" style="font-size:6px;color:var(--ok)"></i> System Operational</span></div>
-   </section>
-  </div>
-  <button class="fab write-only" id="fabAdd" onclick="toggleForm('add')" aria-label="New Entry"><i class="fas fa-plus"></i></button>
-  <nav class="tabbar" id="tabbar">
-   <button data-p="dash" onclick="showPage('dash')" class="active"><i class="fas fa-square-poll-vertical"></i>Home</button>
-   <button data-p="sites" onclick="showPage('sites')"><i class="fas fa-magnifying-glass"></i>Search</button>
-   <button class="write-only" data-p="map" onclick="showPage('map')"><i class="fas fa-map"></i>Map</button>
-   <button class="admin-only" data-p="data" onclick="showPage('data')"><i class="fas fa-square-plus"></i>Data</button>
-   <button data-p="set" onclick="showPage('set')"><i class="fas fa-gear"></i>Settings</button>
-  </nav>
- </main>
-</div>
-
-<div class="modal" id="dupModal" style="z-index:95" onclick="if(event.target===this)dupResolve('cancel')">
- <div class="sheet"><h3>Duplicate site paoa gese</h3>
-  <div class="sec-s" id="dupInfo"></div><div id="dupBody"></div>
-  <div class="mf" style="flex-wrap:wrap"><button class="btn btn-p" onclick="dupResolve('merge')">Merge</button><button class="btn" onclick="dupResolve('update')">Update existing</button><button class="btn" onclick="dupResolve('cancel')">Cancel</button></div>
- </div>
-</div>
-
-<div class="modal" id="impModal" style="z-index:95" onclick="if(event.target===this)impResolve('cancel')">
- <div class="sheet"><h3 id="impTitle">Import</h3>
-  <div id="impBody"></div>
-  <div class="sec-s" style="margin-top:12px"><b>Merge:</b> purono data thakbe, shudhu notun add / mil thakle update hobe.<br><b>Replace all:</b> puro replace (Admin PIN lagbe).<br>Dui khetreii age Telegram e backup jabe.</div>
-  <div class="mf" style="flex-wrap:wrap"><button class="btn btn-p" onclick="impResolve('merge')"><i class="fas fa-code-merge"></i> Merge</button><button class="btn" onclick="impResolve('replace')"><i class="fas fa-lock"></i> Replace all (PIN)</button><button class="btn" onclick="impResolve('cancel')">Cancel</button></div>
- </div>
-</div>
-
-<div class="toast" id="idleToast"><span id="idleMsg"></span><button class="btn btn-p" type="button" onclick="bump()">Stay logged in</button></div>
-
-<div class="modal" id="viewModal" onclick="if(event.target===this)closeView()">
- <div class="sheet"><h3>Site Details</h3><div id="viewBody"></div>
-  <div class="mf"><button class="btn btn-p write-only" id="viewEditBtn" onclick="editFromView()"><i class="fas fa-pen"></i> Edit</button><button class="btn" onclick="copyData()"><i class="fas fa-copy"></i> Copy Data</button><button class="btn" onclick="closeView()">Close</button></div>
- </div>
-</div>
-
-<div class="modal" id="editSection" onclick="if(event.target===this)toggleForm('hide')">
- <div class="sheet"><h3 id="formTitle">Management</h3>
-  <div id="inputGrid">
-   <input type="text" id="editName" placeholder="Site Name" class="inp">
-   <input type="text" id="editIP" placeholder="IP Address" class="inp">
-   <input type="text" id="editSub" placeholder="Sub-Center" class="inp">
-   <input type="text" id="editNode" placeholder="Node Address" class="inp">
-   <input type="text" id="editModel" placeholder="Model" class="inp">
-   <input type="text" id="editLat" placeholder="Latitude" class="inp">
-   <input type="text" id="editLong" placeholder="Longitude" class="inp">
-   <input type="text" id="editClient" placeholder="Client (GP/ROBI/BL)" class="inp">
-   <textarea id="editKey" placeholder="Key / Notes Info..." class="inp"></textarea>
-  </div>
-  <div class="mf"><button id="saveBtn" onclick="updateMasterData()" class="btn btn-p">Save Record</button><button id="delBtn" onclick="deleteSite()" class="btn btn-d admin-only" style="display:none"><i class="fas fa-trash"></i> Delete</button><button onclick="toggleForm('hide')" class="btn">Cancel</button></div>
- </div>
-</div>
-</div>
-</div>
-
-<script>
-// ====== CONFIG: apiKey ta Firebase Console > Project settings > Your apps theke paste korun ======
-const CONFIG = {
-    API_BASE: "https://link-edge-50mt.onrender.com",
-    firebase: {
-        apiKey: "AIzaSyAR4IWPamZ2WawTTN-B7WSSPaUQNQh73Sg",
-        authDomain: "phoenixdatabase-v1.firebaseapp.com",
-        projectId: "phoenixdatabase-v1",
-        databaseURL: "https://phoenixdatabase-v1-default-rtdb.firebaseio.com/"
-    }
-};
-firebase.initializeApp(CONFIG.firebase);
-const db = firebase.database();
-const auth = firebase.auth();
-const $ = (id) => document.getElementById(id);
-
-let masterData = [];
-let keysData = {};
-let filterTimeout;
-let listening = false;
-let viewIdx = -1;
-let ROLE = '';
-let editOrigName = '';
-let editOrigKey = '';
-let saving = false;
-let logCache = [];
-let masterIsArr = true;
-let OFFLINE = false;
-let UNAME = '';
-
-        function safeKey(s) {
-            return String(s || '')
-                .replace(/[.#$\/\[\]]/g, '_')
-                .replace(/\s+/g, ' ')
-                .trim()
-                .toUpperCase()
-                .slice(0, 200);
-        }
-        function esc(s) {
-            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-        }
-        function unesc(s) {
-            return String(s ?? '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
-        }
-        function toArray(v) {
-            return Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []);
-        }
-        function normRow(r) {
-            if (!r || Array.isArray(r) || typeof r !== 'object') return r;
-            const a = []; for (let i = 0; i < 8; i++) a.push(r[i] ?? r[String(i)] ?? ''); return a;
-        }
-
-        const R_TYPED  = /(^|[^A-Z0-9])([A-Z]{2,6})[_ -]([A-Z])(\d{2,5})(?!\d)/g;   
-        const R_REGION = /(^|[^A-Z0-9])([A-Z]{2,6})(\d{2,5})(?!\d)/g;                
-        const R_BARE   = /(^|[^A-Z0-9])([A-Z])(\d{3,5})(?!\d)/g;                     
-        const SEP = '\n— — —\n';
-        
-        function parseIds(text) {
-            let u = safeKey(text);
-            const ids = [];
-            u = u.replace(R_TYPED, (m, pre, reg, typ, num) => { ids.push({ reg, typ, num }); return pre + ' '; });
-            u = u.replace(R_REGION, (m, pre, reg, num) => { ids.push({ reg, typ: '', num }); return pre + ' '; });
-            u.replace(R_BARE, (m, pre, typ, num) => { ids.push({ reg: '', typ, num }); return pre + ' '; });
-            return ids;
-        }
-        const idCode = (id) => id.reg + (id.typ ? (id.reg ? '_' : '') + id.typ : '') + id.num;
-        const typOk = (a, b) => !a || !b || a === b;   
-        const addTo = (m, k, e) => { if (!m.has(k)) m.set(k, []); m.get(k).push(e); };
-        
-        function buildKeyIndex(keysObj) {
-            const idx = { full: new Map(), core: new Map(), num: new Map() };
-            for (const k of Object.keys(keysObj || {})) {
-                const v = valueToString(keysObj[k]);
-                if (!v) continue;
-                addTo(idx.full, safeKey(k), { v, k });
-                for (const id of parseIds(k)) {
-                    const e = { v, id, code: idCode(id), k };
-                    if (id.reg) addTo(idx.core, id.reg + id.num, e);
-                    if (id.num.length >= 4) addTo(idx.num, id.num, e);
-                }
-            }
-            return idx;
-        }
-        
-        function lookupKeys(siteName, idx) {
-            const precise = new Set(), weak = new Map();
-            (idx.full.get(safeKey(siteName)) || []).forEach(e => precise.add(e.v));
-            for (const tok of safeKey(siteName).split(/[^A-Z0-9]+/)) {
-                if (tok.length >= 5) (idx.full.get(tok) || []).forEach(e => precise.add(e.v));
-            }
-            for (const mi of parseIds(siteName)) {
-                if (mi.reg) (idx.core.get(mi.reg + mi.num) || []).forEach(e => { if (typOk(mi.typ, e.id.typ)) precise.add(e.v); });
-                if (mi.num.length >= 4) (idx.num.get(mi.num) || []).forEach(e => {
-                    if ((!mi.reg || !e.id.reg) && typOk(mi.typ, e.id.typ)) weak.set(e.v, e.code);
-                });
-            }
-            if (precise.size) return [...precise].join(SEP);
-            if (weak.size) return [...weak].map(([v, c]) => `(≈ ${c}) ${v}`).join(SEP);
-            return null;
-        }
-        
-        const valueToString = (val) => {
-            if (val && typeof val === 'object') val = Object.values(val).join(' | ');
-            return val ? val.toString().trim() : '';
-        };
-        const SEARCH_COLS = [0, 1, 2, 3, 4, 7];   
-        let keyIdx = buildKeyIndex({}), masterHay = [], masterIds = [], _keysFor = null, _masterFor = null;
-        let keyOnly = [], _koK = null, _koM = null, koFilter = false, viewKOIdx = -1;
-
-        // Key-only: key ache kintu BTS data (master) e kono site match kore na
-        function computeKeyOnly(keysObj, names) {
-            const full = new Set(), toks = new Set(), core = new Map(), num = new Map();
-            for (const n of names) {
-                if (!n) continue;
-                const sk = safeKey(n);
-                full.add(sk);
-                sk.split(/[^A-Z0-9]+/).forEach(t => { if (t.length >= 5) toks.add(t); });
-                for (const id of parseIds(n)) {
-                    if (id.reg) addTo(core, id.reg + id.num, id);
-                    if (id.num.length >= 4) addTo(num, id.num, id);
-                }
-            }
-            const groups = new Map();
-            for (const k of Object.keys(keysObj || {})) {
-                const v = valueToString(keysObj[k]);
-                if (!v) continue;
-                const sk = safeKey(k), ids = parseIds(k);
-                let hit = full.has(sk) || toks.has(sk);
-                if (!hit) for (const id of ids) {
-                    if (id.reg && (core.get(id.reg + id.num) || []).some(m => typOk(id.typ, m.typ))) { hit = true; break; }
-                    if (id.num.length >= 4 && (num.get(id.num) || []).some(m => (!id.reg || !m.reg) && typOk(id.typ, m.typ))) { hit = true; break; }
-                }
-                if (hit) continue;
-                const g = groups.get(v) || { name: k, names: [], v, ids: [] };
-                g.names.push(k); ids.forEach(i => g.ids.push(i));
-                groups.set(v, g);
-            }
-            return [...groups.values()].map(g => {
-                const al = new Set(g.names.map(safeKey));
-                g.ids.forEach(id => { al.add(idCode(id)); if (id.reg) al.add(id.reg + id.num); al.add(id.num); });
-                g.hay = [...al].join(' | ');
-                return g;
-            }).sort((a, b) => a.name.localeCompare(b.name));
-        }
-
-        function ensureIndexes() {
-            if (_koK !== keysData || _koM !== masterData) {
-                _koK = keysData; _koM = masterData;
-                keyOnly = computeKeyOnly(keysData, masterData.slice(1).map(r => Array.isArray(r) ? String(r[0] ?? '').trim() : ''));
-            }
-            if (_keysFor !== keysData) { _keysFor = keysData; keyIdx = buildKeyIndex(keysData); }
-            if (_masterFor !== masterData) {
-                _masterFor = masterData;
-                masterIds = masterData.map(r => Array.isArray(r) ? parseIds((r[0] ?? '').toString()) : []);
-                masterHay = masterData.map((r, i) => {
-                    if (!Array.isArray(r)) return '';
-                    const al = new Set(); masterIds[i].forEach(id => { al.add(idCode(id)); if (id.reg) al.add(id.reg + id.num); al.add(id.num); });
-                    return [...SEARCH_COLS.map(c => (r[c] ?? '').toString().trim().toUpperCase()), ...al].join(' | ');
-                });
-            }
-        }
-
-        function findKeyInfo(siteName, editMode) {
-            ensureIndexes();
-            const res = unesc(lookupKeys(siteName, keyIdx) || '');
-            return editMode ? res.split(SEP).filter(x => !x.startsWith('(≈')).join(SEP) : res;
-        }
-
-        // Edit form e jei key info dekhay, oi ta Firebase er kon kon key theke ashche (precise match)
-        function matchedKeyNames(siteName) {
-            ensureIndexes();
-            const out = new Set();
-            (keyIdx.full.get(safeKey(siteName)) || []).forEach(e => out.add(e.k));
-            for (const tok of safeKey(siteName).split(/[^A-Z0-9]+/)) {
-                if (tok.length >= 5) (keyIdx.full.get(tok) || []).forEach(e => out.add(e.k));
-            }
-            for (const mi of parseIds(siteName)) {
-                if (mi.reg) (keyIdx.core.get(mi.reg + mi.num) || []).forEach(e => { if (typOk(mi.typ, e.id.typ)) out.add(e.k); });
-            }
-            return [...out];
-        }
-
-        function makeMatcher(tokens) {
-            const qid = tokens.length === 1 ? parseIds(tokens[0]) : [];
-            const qi = qid.length === 1 && qid[0].num.length >= 4 ? qid[0] : null;
-            return (i) => tokens.every(t => masterHay[i].includes(t)) ||
-                (qi && masterIds[i].some(m => m.num === qi.num && (!m.reg || !qi.reg || m.reg === qi.reg) && typOk(m.typ, qi.typ)));
-        }
-
-
-// ---------- Auth (Master PIN -> server -> Firebase custom token) ----------
-async function api(path, opts) {
-    const c = new AbortController();
-    const t = setTimeout(() => c.abort(), 45000);
-    try { return await fetch(CONFIG.API_BASE + path, { ...opts, signal: c.signal }); }
-    finally { clearTimeout(t); }
-}
-const JSON_H = { 'Content-Type': 'application/json' };
-
-const PIN_LS = 'phoenix_remember_pin';
-function rememberPin(pin) {
-    try {
-        if ($('rememberPin') && $('rememberPin').checked) localStorage.setItem(PIN_LS, pin);
-        else localStorage.removeItem(PIN_LS);
-    } catch (_) {}
-}
-(function loadRememberedPin() {
-    try {
-        const v = localStorage.getItem(PIN_LS);
-        if (v) { $('pinIn').value = v; if ($('rememberPin')) $('rememberPin').checked = true; }
-    } catch (_) {}
-})();
-
-async function verifyAccess() {
-    const pin = $('pinIn').value.trim();
-    if (!pin) return;
-    const err = $('authError'), btn = $('authBtn');
-    if (!navigator.onLine) {   // internet nai -> local saved data (unlock by PIN)
-        if (await offlineUnlock(pin)) { rememberPin(pin); $('pinIn').value = ''; } else loginNote('Wrong PIN, ba offline data nai');
-        return;
-    }
-    btn.disabled = true; btn.textContent = 'Logging in...';
-    try {
-        const r = await api('/auth/pin', { method: 'POST', headers: JSON_H, body: JSON.stringify({ pin }) });
-        const j = await r.json().catch(() => ({}));
-        if (!r.ok || !j.token) throw new Error(r.status === 429 ? 'Too many attempts. Try again later.' : r.status === 401 ? 'Wrong PIN' : r.status === 403 ? 'Apnar access block kora hoyeche' : 'Server error');
-        await auth.signInWithCustomToken(j.token);
-        await prepSnap(pin, j.role).catch(() => {});
-        rememberPin(pin);
-        $('pinIn').value = '';
-    } catch (e) {
-        if ((e instanceof TypeError || e.name === 'AbortError') && await hasSnap() && confirm('Server not found. Offline (view-only) mode?')) {
-            if (await offlineUnlock(pin)) { rememberPin(pin); $('pinIn').value = ''; return; }
-            loginNote('Wrong PIN'); return;
-        }
-        err.textContent = e.name === 'AbortError' ? 'Server timeout. Try again.' : (e.message || 'Failed');
-        err.style.display = 'block';
-        setTimeout(() => err.style.display = 'none', 3500);
-    } finally { btn.disabled = false; btn.textContent = 'Log In'; }
-}
-
-async function askPin(label) {
-    if (ROLE !== 'admin') { alert('Only admin can do.'); return false; }
-    const pin = prompt('Enter Admin PIN to ' + label + ':');
-    if (pin === null) return false;
-    try {
-        const r = await api('/auth/pin', { method: 'POST', headers: JSON_H, body: JSON.stringify({ pin: pin.trim(), check: true }) });
-        if (r.ok) { const j = await r.json().catch(() => ({})); if (j.role === 'admin') return true; alert('Need Admin PIN.'); return false; }
-        alert(r.status === 429 ? 'Too many attempts. Pore try later.' : 'Invalid PIN.');
-    } catch (e) { alert('Server not reachable.'); }
-    return false;
-}
-
-async function logout() {
-    if (confirm('Are you sure you want to logout?')) { if (OFFLINE) { exitOffline(); return; } await Promise.race([logAct('logout'), new Promise(r => setTimeout(r, 2000))]); auth.signOut(); }
-}
-
-function startListeners() {
-    db.ref('professor_master_db').on('value', (s) => { masterData = toArray(s.val()).map(normRow); masterIsArr = Array.isArray(s.val()); refreshUI_Internal(); snapSoon(); },
-        (e) => { if (/permission/i.test(e.message)) { auth.signOut(); loginNote('Access denied'); } else alert('❌ Firebase read error (master): ' + e.message); });
-    db.ref('professor_keys_db').on('value', (s) => { keysData = s.val() || {}; refreshUI_Internal(); snapSoon(); },
-        (e) => { if (/permission/i.test(e.message)) { auth.signOut(); loginNote('Access bondho kora hoyeche'); } else alert('❌ Firebase read error (keys): ' + e.message); });
-}
-
-auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {}).then(() => {
-    auth.onAuthStateChanged(async (u) => {
-        if (!(await applyRole(u))) return;
-        $('loginGate').style.display = u ? 'none' : 'flex';
-        $('app').style.display = u ? 'flex' : 'none';
-        if (u) startIdle(); else { stopIdle(); logCache = []; $('logList').innerHTML = ''; snapKey = null; }
-        if (u && !listening) { listening = true; startListeners(); showPage('dash'); }
-        if (!u && listening) {
-            db.ref('professor_master_db').off(); db.ref('professor_keys_db').off();
-            listening = false; masterData = []; keysData = {};
-        }
-    });
-});
-
-// ---------- Role / activity log ----------
-async function applyRole(u) {
-    ROLE = '';
-    let uname = '';
-    if (u) {
-        let got = false;
-        try { 
-            const claims = await u.getIdTokenResult();
-            ROLE = claims.claims.role || ''; 
-            uname = claims.claims.name || ''; UNAME = uname; got = true;
-            if (ROLE) { try { sessionStorage.setItem('phx_claims', JSON.stringify({ uid: u.uid, role: ROLE, name: uname })); } catch (_) {} }
-        } catch (_) {}
-        if (!got) {   // offline: token refresh hoyni, sign-out na kore ager role use kori
-            try {
-                const c = JSON.parse(sessionStorage.getItem('phx_claims') || 'null');
-                if (c && c.uid === u.uid && (c.role === 'admin' || c.role === 'user')) { ROLE = c.role; uname = c.name || ''; UNAME = uname; }
-            } catch (_) {}
-            if (!ROLE && (!navigator.onLine || OFFLINE)) { ROLE = 'user'; }
-        }
-        if (ROLE !== 'admin' && ROLE !== 'user') {   
-            ROLE = ''; auth.signOut(); loginNote('Notun version e abar login korun'); return false;
-        }
-    }
-    document.body.dataset.role = ROLE;
-    $('roleTag').textContent = (uname ? uname + ' (' : '') + ROLE.toUpperCase() + (uname ? ')' : '');
-    return true;
-}
-function loginNote(t) {
-    const e = $('authError'); e.textContent = t; e.style.display = 'block';
-    setTimeout(() => e.style.display = 'none', 6000);
-}
-function logAct(action, site, detail) {
-    if (!auth.currentUser || !ROLE) return Promise.resolve();
-    return db.ref('activity_log').push({
-        ts: firebase.database.ServerValue.TIMESTAMP, role: ROLE, action, name: UNAME,
-        site: String(site || '').slice(0, 200), detail: String(detail || '').slice(0, 600)
-    }).catch(() => {});
-}
-
-// ---------- Auto logout ----------
-const WARN_SEC = 30;
-let idleTimer = null, lastActive = Date.now(), warnShown = false;
-function idleMinutes() {
-    let m = 10; try { m = parseInt(localStorage.getItem('phoenix_idle_min'), 10); } catch (_) {}
-    return [5, 10, 15, 30, 60].includes(m) ? m : 10;
-}
-function bump() { lastActive = Date.now(); if (warnShown) hideWarn(); }
-['mousedown', 'keydown', 'touchstart', 'scroll', 'click'].forEach(ev => window.addEventListener(ev, bump, { passive: true, capture: true }));
-function showWarn(sec) { $('idleMsg').textContent = '⏳ ' + sec + ' second por auto logout hobe'; $('idleToast').style.display = 'flex'; warnShown = true; }
-function hideWarn() { $('idleToast').style.display = 'none'; warnShown = false; }
-function startIdle() { lastActive = Date.now(); clearInterval(idleTimer); idleTimer = setInterval(idleTick, 1000); }
-function stopIdle() { clearInterval(idleTimer); idleTimer = null; hideWarn(); }
-async function idleTick() {
-    if (!auth.currentUser && !OFFLINE) return;
-    const left = idleMinutes() * 60 - (Date.now() - lastActive) / 1000;
-    if (left <= 0) {
-        stopIdle();
-        await Promise.race([logAct('auto_logout'), new Promise(r => setTimeout(r, 2000))]);
-        if (OFFLINE) exitOffline(); else auth.signOut();
-        loginNote('Idle thakar karone auto logout hoyeche');
-        return;
-    }
-    if (left <= WARN_SEC) showWarn(Math.ceil(left)); else if (warnShown) hideWarn();
-}
-document.addEventListener('visibilitychange', () => { if (!document.hidden) idleTick(); });
-
-// ---------- Settings: idle, PIN, log ----------
-const LOG_LABEL = { login: 'Login', login_failed: 'Login failed', logout: 'Logout', auto_logout: 'Auto logout', add: 'Add', edit: 'Edit', merge: 'Merge', delete: 'Delete',
-    import_master: 'Import data', import_keys: 'Import keys', wipe_master: 'Wipe data', wipe_keys: 'Wipe keys', export_master: 'Export data',
-    export_keys: 'Export keys', push: 'Push Telegram', pin_change: 'PIN change', backup: 'Auto backup', backup_now: 'Backup now', backup_config: 'Backup setting', user_add: 'User Add', user_delete: 'User Delete', user_block: 'User Block', user_unblock: 'User Unblock', login_blocked: 'Login blocked' };
-function initSettings() {
-    $('idleSel').value = String(idleMinutes());
-    if (ROLE === 'admin') { bkLoad(); loadUsers(); }
-    if (ROLE === 'admin') {
-        if ($('logAction').options.length < 2)
-            $('logAction').innerHTML = '<option value="">All actions</option>' + Object.keys(LOG_LABEL).map(k => `<option value="${k}">${LOG_LABEL[k]}</option>`).join('');
-        loadLogs();
-    }
-}
-function saveIdle() { try { localStorage.setItem('phoenix_idle_min', $('idleSel').value); } catch (_) {} bump(); }
-
-async function addNewUser() {
-    const username = $('newUserName').value.trim();
-    const newPin = $('newUserPin').value.trim();
-    const role = $('newUserRole').value;
-    const currentAdminPin = $('adminAuthPin').value.trim();
-    const st = $('userMgmtMsg');
-
-    if (!username || !/^\d{6}$/.test(newPin)) {
-        st.textContent = 'Sothik Username ebong 6-digit PIN din'; st.style.color = 'var(--bad)';
-        return;
-    }
-    if (!currentAdminPin) {
-        st.textContent = 'Confirmation er jonno apnar Admin PIN din'; st.style.color = 'var(--bad)';
-        return;
-    }
-
-    st.textContent = 'Saving...'; st.style.color = 'var(--text)';
-    try {
-        const tok = await auth.currentUser.getIdToken();
-        const r = await api('/admin/users', {
-            method: 'POST',
-            headers: { ...JSON_H, Authorization: 'Bearer ' + tok },
-            body: JSON.stringify({ action: 'add', username, newPin, role, currentAdminPin })
-        });
-        const j = await r.json().catch(() => ({}));
-        if (!r.ok) throw new Error(j.error || 'Failed');
-        
-        $('newUserName').value = '';
-        $('newUserPin').value = '';
-        $('adminAuthPin').value = '';
-        st.textContent = '✅ User successfully added/updated!';
-        st.style.color = 'var(--ok)';
-        loadLogs(); loadUsers();
-    } catch (e) {
-        st.textContent = '❌ ' + e.message;
-        st.style.color = 'var(--bad)';
-    }
-}
-
-async function loadUsers() {
-    if (ROLE !== 'admin') return;
-    const box = $('userList'); box.innerHTML = '<div class="more">Loading...</div>';
-    try {
-        const j = await bkCall('/admin/users', { action: 'list' });
-        box.innerHTML = (j.users || []).length ? j.users.map(u =>
-            `<div class="logrow" style="grid-template-columns:1fr auto auto"><b>${esc(u.name)}</b><span><span class="tag ${u.role === 'admin' ? 'tag-gp' : ''}">${esc(u.role)}</span>${u.blocked ? ' <span class="tag tag-robi">BLOCKED</span>' : ''}</span><span class="acts"><button class="op" data-a="${u.blocked ? 'unblock' : 'block'}" data-k="${esc(u.key)}">${u.blocked ? 'Unblock' : 'Block'}</button><button class="op" style="color:var(--bad)" data-a="delete" data-k="${esc(u.key)}">Delete</button></span></div>`
-        ).join('') : '<div class="more">No users yet</div>';
-    } catch (e) { box.innerHTML = '<div class="more">User list loaded: ' + esc(e.message) + '</div>'; }
-}
-async function userAct(a, k) {
-    if (a === 'delete' && !confirm('"' + k + '" delete user?')) return;
-    const pin = prompt('Admin PIN diye confirm korun:');
-    if (pin === null) return;
-    try { await bkCall('/admin/users', { action: a, username: k, currentAdminPin: pin.trim() }); loadUsers(); loadLogs(); }
-    catch (e) { alert('❌ ' + e.message); }
-}
-$('userList').addEventListener('click', (e) => { const b = e.target.closest('button[data-a]'); if (b) userAct(b.dataset.a, b.dataset.k); });
-
-const fmtTs = (t) => t ? new Date(t).toLocaleString('en-GB', { timeZone: 'Asia/Dhaka', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }) : '-';
-async function loadLogs() {
-    if (ROLE !== 'admin') return;
-    $('logList').innerHTML = '<div class="more">Loading...</div>';
-    try {
-        const snap = await db.ref('activity_log').orderByKey().limitToLast(100).once('value');
-        const arr = []; snap.forEach(c => { arr.push(c.val()); });
-        logCache = arr.reverse();
-        renderLogs();
-    } catch (e) { $('logList').innerHTML = '<div class="more">Log load hoyni: ' + esc(e.message) + '</div>'; }
-}
-function renderLogs() {
-    const q = $('logSearch').value.trim().toLowerCase(), a = $('logAction').value, rl = $('logRole').value;
-    const rows = logCache.filter(l => l && (!a || l.action === a) && (!rl || l.role === rl) &&
-        (!q || [l.name, l.site, l.detail, l.action, l.role].join(' ').toLowerCase().includes(q)));
-    $('logList').innerHTML = rows.length ? rows.map(l =>
-        `<div class="logrow"><span class="mono lg-t">${esc(fmtTs(l.ts))}</span><span><b>${esc(l.name || '-')}</b> <span class="tag ${l.role === 'admin' ? 'tag-gp' : ''}">${esc(l.role)}</span></span><b>${esc(LOG_LABEL[l.action] || l.action)}</b><span class="lg-d">${esc([l.site, l.detail].filter(Boolean).join(' · '))}</span></div>`
-    ).join('') : '<div class="more">Kono log nai</div>';
-}
-
-function deleteSite() {
-    if (OFFLINE || !navigator.onLine) { alert('Offline: delete close.'); return; }
-    if (ROLE !== 'admin' || !editOrigName) return;
-    const name = editOrigName;
-    if (!confirm('"' + name + '" Want to delete site ? (Key info here, only site row erase)')) return;
-    const newMaster = [...masterData];
-    const idx = newMaster.findIndex((r, i) => i > 0 && r && r[0]?.toString().trim().toUpperCase() === name.toUpperCase());
-    if (idx === -1) { alert('Site paoa jay nai'); return; }
-    newMaster.splice(idx, 1);
-    db.ref('professor_master_db').set(newMaster).then(() => {
-        masterData = newMaster; logAct('delete', name, '');
-        alert('✅ Site deleted'); toggleForm('hide'); refreshUI_Internal();
-    }).catch(err => alert('❌ Firebase Error: ' + err.message));
-}
-
-// ---------- Navigation / theme ----------
-const TITLES = { dash: 'Dashboard', sites: 'Sites', map: 'Map', data: 'Data Tools', set: 'Settings' };
-function showPage(p) {
-    if (p === 'data' && ROLE !== 'admin') p = 'dash';
-    if (p === 'map' && OFFLINE) p = 'dash';
-    document.querySelectorAll('.page').forEach(e => e.classList.toggle('active', e.id === 'pg-' + p));
-    document.querySelectorAll('.nav button, .tabbar button').forEach(b => b.classList.toggle('active', b.dataset.p === p));
-    document.body.classList.toggle('sites-on', p === 'sites');
-    $('pageTitle').textContent = TITLES[p];
-    closeNav();
-    const c = document.querySelector('.content');
-    if (c) c.scrollTop = 0;
-    window.scrollTo(0, 0);
-    if (p === 'set') initSettings();
-    if (p === 'dash') loadDashLogs(false);
-    if (p === 'map') openMap();
-}
-function openNav() { $('side').classList.add('open'); $('overlay').classList.add('open'); }
-function closeNav() { $('side').classList.remove('open'); $('overlay').classList.remove('open'); }
-
-const THEMES = ['light', 'sky', 'mint', 'sand', 'dark'];
-const THEME_UI = { light: ['Light', '#eef2f8', '#6d5efc'], sky: ['Sky', '#e8f3ff', '#2b8cff'], mint: ['Mint', '#eaf7f2', '#10b981'], sand: ['Sand', '#f6efe6', '#d97706'], dark: ['Dark', '#0b1020', '#8b7cff'] };
-let fadeT = null;
-function applyTheme(t, fade) {
-    if (!THEMES.includes(t)) t = 'light';
-    const b = document.body;
-    if (fade && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
-        b.classList.add('theme-fade'); clearTimeout(fadeT); fadeT = setTimeout(() => b.classList.remove('theme-fade'), 450);
-    }
-    b.setAttribute('data-theme', t);
-    try { localStorage.setItem('phoenix_theme', t); } catch (_) {}
-    updateThemeIcon(t);
-    const m = document.querySelector('meta[name=theme-color]');
-    if (m) setTimeout(() => { m.setAttribute('content', getComputedStyle(b).getPropertyValue('--bg').trim() || '#0c1016'); }, 30);
-}
-function toggleTheme() {
-    const c = document.body.getAttribute('data-theme');
-    applyTheme(THEMES[(Math.max(THEMES.indexOf(c), 0) + 1) % THEMES.length], true);
-}
-function updateThemeIcon(t) {
-    const i = $('themeIcon'); if (i) i.className = t === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
-    document.querySelectorAll('.sw-th').forEach(x => x.classList.toggle('on', x.dataset.t === t));
-}
-(function () {
-    const row = $('swRow');
-    if (row) row.innerHTML = THEMES.map(k => `<button type="button" class="sw-th" data-t="${k}" onclick="applyTheme('${k}',true)"><i class="swc" style="background:linear-gradient(135deg,${THEME_UI[k][1]} 50%,${THEME_UI[k][2]} 50%)"></i>${THEME_UI[k][0]}</button>`).join('');
-    let t = 'light'; try { t = localStorage.getItem('phoenix_theme') || 'light'; } catch (_) {}
-    applyTheme(t, false);
-})();
-
-function debounceFilter() {
-    clearTimeout(filterTimeout);
-    filterTimeout = setTimeout(handleFilter, 200);
-}
-
-        // ---------- Smart import (merge) ----------
-        let impPend = null;
-        const stripDate = (e) => String(e).replace(/^\[[^\]]*\]\s*/, '').replace(/\s+/g, ' ').trim();
-        const HTML_ENT = /&(amp|lt|gt|quot|#39);/;
-
-        function showImp(title, rows, pend) {
-            impPend = pend;
-            $('impTitle').textContent = title;
-            $('impBody').innerHTML = rows.map(([k, v]) => `<div class="kv"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('');
-            $('impModal').classList.add('open');
-        }
-        async function impBackup() {
-            try { await bkCall('/admin/backup-now'); return true; }
-            catch (e) { return confirm('⚠️ Telegram backup hoyni (' + e.message + ').\nBackup chara cholte chan?'); }
-        }
-        async function impResolve(mode) {
-            const p = impPend;
-            if (mode === 'cancel' || !p) { impPend = null; $('impModal').classList.remove('open'); return; }
-            if (mode === 'replace' && !(await askPin('replace ALL ' + (p.kind === 'data' ? 'Master Data' : 'Key Data')))) return;
-            impPend = null; $('impModal').classList.remove('open');
-            if (OFFLINE || !navigator.onLine) { alert('Offline: import bondho.'); return; }
-            if (mode === 'merge' && !p.changed) { alert('ℹ️ Notun ba update howar moto kichu nai.'); return; }
-            if (!(await impBackup())) return;
-            try {
-                if (p.kind === 'data') {
-                    const out = mode === 'merge' ? p.merged : p.full;
-                    await db.ref('professor_master_db').set(out);
-                    masterData = out; masterIsArr = true;
-                    if (mode === 'merge') {
-                        logAct('import_master', '', 'Merge: +' + p.st.add + ' notun, ' + p.st.upd + ' update, ' + p.st.keep + ' thakbe');
-                        alert('✅ Merge hoyeche!\nNotun: ' + p.st.add + '\nUpdate: ' + p.st.upd + '\nAgey thaka (file e nai): ' + p.st.keep);
-                    } else {
-                        logAct('import_master', '', 'Replace all: ' + (out.length - 1) + ' rows');
-                        alert('✅ Master Data replace hoyeche! Rows: ' + (out.length - 1));
-                    }
-                } else if (mode === 'merge') {
-                    await db.ref('professor_keys_db').update(p.changes);
-                    keysData = { ...keysData, ...p.changes };
-                    logAct('import_keys', '', 'Merge: +' + p.st.add + ' notun key, ' + p.st.upd + ' update, ' + p.st.clean + ' clean');
-                    alert('✅ Key merge hoyeche!\nNotun key: ' + p.st.add + '\nNotun entry jog: ' + p.st.upd + '\nClean (&amp; fix): ' + p.st.clean);
-                } else {
-                    await db.ref('professor_keys_db').set(p.newKeys);
-                    keysData = p.newKeys;
-                    logAct('import_keys', '', 'Replace all: ' + Object.keys(p.newKeys).length + ' sites');
-                    alert('✅ Key Database replace hoyeche! Sites: ' + Object.keys(p.newKeys).length);
-                }
-                refreshUI_Internal();
-            } catch (err) { console.error(err); alert('❌ Firebase Error: ' + err.message); }
-        }
-
-        function prepDataImport(rows) {
-            if (!rows.length) { alert('❌ File khali.'); return; }
-            const hasHead = /^\s*site(\s*(name|id|code))?\s*$/i.test(s8(rows[0][0]));
-            const body = rows.slice(hasHead ? 1 : 0);
-            const pad = (r) => { const a = r.slice(); while (a.length < 8) a.push(''); return a; };
-            const names0 = masterData.slice(1).map(r => Array.isArray(r) ? s8(r[0]) : '');
-            const koBefore = computeKeyOnly(keysData, names0).length;
-            const work = masterData.length ? masterData.map(r => Array.isArray(r) ? r.slice() : (r ?? null)) : [hasHead ? pad(rows[0]) : HEAD8.slice()];
-            const byName = new Map(), byCore = new Map();
-            const reg = (r, i) => {
-                const n = s8(r[0]); if (!n) return;
-                if (!byName.has(n.toUpperCase())) byName.set(n.toUpperCase(), i);
-                for (const id of parseIds(n)) if (id.reg) addTo(byCore, id.reg + id.num, { i, id });
-            };
-            for (let i = 1; i < work.length; i++) if (Array.isArray(work[i])) reg(work[i], i);
-            const origLen = work.length, exist = work.slice(1).filter(Array.isArray).length;
-            const st = { file: 0, add: 0, upd: 0, same: 0, skip: 0, amb: 0, keep: 0 };
-            const addN = [], updN = [], touched = new Set();
-            for (const raw of body) {
-                const name = s8(raw[0]);
-                if (!name) { if (raw.some(c => s8(c))) st.skip++; continue; }
-                st.file++;
-                const nr = pad(raw);
-                let idx = byName.get(name.toUpperCase());
-                if (idx === undefined) {
-                    const cands = new Set();
-                    for (const id of parseIds(name)) if (id.reg) (byCore.get(id.reg + id.num) || []).forEach(c => { if (typOk(id.typ, c.id.typ)) cands.add(c.i); });
-                    if (cands.size === 1) idx = [...cands][0]; else if (cands.size > 1) st.amb++;
-                }
-                if (idx === undefined) { work.push(nr); reg(nr, work.length - 1); st.add++; addN.push(name); touched.add(work.length - 1); continue; }
-                touched.add(idx);
-                const old = work[idx]; while (old.length < 8) old.push('');
-                let ch = 0;
-                for (let c = 1; c < Math.max(old.length, nr.length); c++) {
-                    if (isEmptyF(nr[c], c)) continue;
-                    if (s8(old[c]) !== s8(nr[c])) { while (old.length <= c) old.push(''); old[c] = nr[c]; ch++; }
-                }
-                if (ch) { st.upd++; updN.push(name); } else st.same++;
-            }
-            st.keep = exist - [...touched].filter(i => i < origLen).length;
-            const koAfter = computeKeyOnly(keysData, work.slice(1).map(r => Array.isArray(r) ? s8(r[0]) : '')).length;
-            const full = hasHead ? rows : [HEAD8.slice(), ...rows];
-            const list = (a) => a.slice(0, 5).join(', ') + (a.length > 5 ? ' ...' : '');
-            const R = [['File e site', st.file], ['Notun (add hobe)', st.add], ['Update hobe', st.upd], ['Hubohu same', st.same], ['File e nai (thakbe)', st.keep]];
-            if (addN.length) R.push(['Notun site', list(addN)]);
-            if (updN.length) R.push(['Update site', list(updN)]);
-            if (st.skip) R.push(['Naam chara row (skip)', st.skip]);
-            if (st.amb) R.push(['ID mile ekadhik site (notun dhora hoyeche)', st.amb]);
-            if (koBefore > koAfter) R.push(['Key-only theke match hobe', koBefore - koAfter]);
-            showImp('Import Data: Merge preview', R, { kind: 'data', merged: work, full, st, changed: st.add + st.upd });
-        }
-
-        document.getElementById('fileInputData').addEventListener('change', (e) => {
-            if (ROLE !== 'admin') return;
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const wbk = XLSX.read(new Uint8Array(event.target.result), { type: 'array' });
-                    const rows = XLSX.utils.sheet_to_json(wbk.Sheets[wbk.SheetNames[0]], { header: 1, defval: "" })
-                        .map(r => Array.from(r, c => (c === undefined || c === null) ? "" : c));
-                    prepDataImport(rows);
-                } catch (err) {
-                    console.error(err);
-                    alert("❌ Failed to parse Excel File.");
-                }
-            };
-            reader.readAsArrayBuffer(file);
-            e.target.value = '';
-        });
-
-        function detectKeyColumns(rows) {
-            for (let i = 0; i < Math.min(rows.length, 15); i++) {
-                const h = (rows[i] || []).map(c => (c ?? '').toString().trim().toLowerCase());
-                const siteCol = h.findIndex(x => /^site(\s*(name|id|code))?$/.test(x));
-                if (siteCol === -1) continue;
-                const keyCol = h.findIndex((x, idx) => idx !== siteCol && /key|info/.test(x));
-                if (keyCol === -1) continue;
-                const dateCol = h.findIndex(x => /date/.test(x));
-                return { headerRow: i, siteCol, keyCol, dateCol };
-            }
-            return { headerRow: -1, siteCol: 0, keyCol: 1, dateCol: 2 };
-        }
-
-        function fmtDate(v) {
-            if (v === undefined || v === null || v === '') return '';
-            if (typeof v === 'number' && v > 30000) {
-                const d = new Date(Math.round((v - 25569) * 86400 * 1000));
-                return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
-            }
-            return v.toString().trim();
-        }
-
-        function siteKeysFromName(raw, info = '') {
-            const t = raw.trim();
-            let keys;
-            if (/^[A-Za-z0-9_]+$/.test(t)) keys = [safeKey(t)];
-            else {
-                const codes = (t.toUpperCase().match(/[A-Z]{3,}[A-Z0-9_]*\d[A-Z0-9_]*/g) || []).map(safeKey).filter(Boolean);
-                keys = codes.length ? [...new Set(codes)] : [safeKey(t)];
-            }
-            if (info && !parseIds(t).length) parseIds(info.slice(0, 150)).forEach(id => keys.push(idCode(id)));
-            return [...new Set(keys)];
-        }
-
-        function prepKeyImport(jsonRows) {
-            const { headerRow, siteCol, keyCol, dateCol } = detectKeyColumns(jsonRows);
-            const bucket = {}, seen = {};
-            let used = 0;
-            jsonRows.forEach((r, i) => {
-                if (i <= headerRow || !r) return;
-                const rawSite = r[siteCol] ? r[siteCol].toString().trim() : '';
-                const info = r[keyCol] ? unesc(r[keyCol].toString().trim()) : '';
-                if (!rawSite || !info) return;
-                const date = dateCol >= 0 ? fmtDate(r[dateCol]) : '';
-                const entry = (date ? `[${date}] ` : '') + info;
-                siteKeysFromName(rawSite, info).forEach(k => {
-                    if (!k) return;
-                    bucket[k] = bucket[k] || [];
-                    seen[k] = seen[k] || new Set();
-                    if (seen[k].has(info)) return;
-                    seen[k].add(info);
-                    bucket[k].push(entry);
-                });
-                used++;
-            });
-            const incoming = {}, newKeys = {};
-            Object.keys(bucket).forEach(k => { incoming[k] = bucket[k].slice().reverse(); newKeys[k] = incoming[k].join(SEP); });
-            const total = Object.keys(newKeys).length;
-            if (!total) { alert("❌ No key data found.Check Header."); return; }
-
-            const changes = {}, st = { add: 0, upd: 0, same: 0, clean: 0, keep: 0 };
-            for (const k of Object.keys(incoming)) {
-                const exRaw = valueToString(keysData[k]);
-                if (!exRaw) { changes[k] = newKeys[k]; st.add++; continue; }
-                const exArr = unesc(exRaw).split(SEP).map(x => x.trim()).filter(Boolean);
-                const have = new Set(exArr.map(stripDate));
-                const fresh = incoming[k].filter(x => !have.has(stripDate(x)));
-                if (fresh.length) { changes[k] = fresh.concat(exArr).join(SEP); st.upd++; }
-                else { st.same++; if (exRaw !== unesc(exRaw)) { changes[k] = exArr.join(SEP); st.clean++; } }
-            }
-            for (const k of Object.keys(keysData)) {
-                if (k in incoming) continue;
-                st.keep++;
-                const v = keysData[k];
-                if (typeof v === 'string' && HTML_ENT.test(v) && unesc(v) !== v) { changes[k] = unesc(v); st.clean++; }
-            }
-            const names = masterData.slice(1).map(r => Array.isArray(r) ? s8(r[0]) : '');
-            const koAfter = computeKeyOnly({ ...keysData, ...changes }, names).length;
-            const R = [['File e rows', used], ['File e site/key', total], ['Notun key', st.add], ['New entry add', st.upd], ['same', st.same]];
-            if (st.clean) R.push(['&amp; theek hobe', st.clean]);
-            R.push(['File e nai (thakbe)', st.keep], ['Key-only (BTS data not found)', koAfter]);
-            showImp('Import Key: Merge preview', R, { kind: 'keys', changes, newKeys, st, changed: Object.keys(changes).length });
-        }
-
-        document.getElementById('fileInputKey').addEventListener('change', (e) => {
-            if (ROLE !== 'admin') return;
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const workbook = XLSX.read(new Uint8Array(event.target.result), { type: 'array' });
-                    prepKeyImport(XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: "" }));
-                } catch (err) {
-                    console.error("Import Error:", err);
-                    alert("❌ Failed to parse Excel File.");
-                }
-            };
-            reader.readAsArrayBuffer(file);
-            e.target.value = '';
-        });
-
-// ---------- UI render ----------
-function refreshUI_Internal() {
-    $('statTime').innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    $('statKeysCount').innerText = Object.keys(keysData).length;
-    buildFilters(); if (mapOpen()) renderMap(false);
-    updateAnalytics();
-    handleFilter();
-}
-
-const CL_PAL = ['#8b5cf6', '#14b8a6', '#ec4899', '#eab308', '#06b6d4', '#84cc16'];
-function updateAnalytics() {
-    ensureIndexes();
-    const rows = masterData.slice(1);
-    $('statTotal').innerText = rows.length;
-    const cl = new Map();
-    let noKey = 0, noLoc = 0;
-    for (const r of rows) {
-        if (!Array.isArray(r)) continue;
-        const raw = s8(r[7]), u = raw.toUpperCase() || 'N/A';
-        const e = cl.get(u) || { label: raw || 'N/A', n: 0 }; e.n++; cl.set(u, e);
-        if (!findKeyInfo(s8(r[0]), true)) noKey++;
-        if (isEmptyF(r[5], 5) || isEmptyF(r[6], 6)) noLoc++;
-    }
-    const list = [...cl].sort((a, b) => b[1].n - a[1].n);
-    const tot = rows.length;
-    let pi = 0;
-    $('clientBars').innerHTML = list.length ? list.map(([u, e]) => {
-        const col = u.includes('GRAMEEN') ? 'var(--gp)' : u.includes('ROBI') ? 'var(--robi)' : u.includes('BANGLALINK') ? 'var(--bl)' : CL_PAL[pi++ % CL_PAL.length];
-        const pct = tot ? (e.n / tot * 100) : 0;
-        return `<div class="prow"><span class="lbl">${esc(e.label)}</span><div class="pbg"><div class="pbar" style="width:${pct}%;background:${col}"></div></div><span class="cnt" title="${pct.toFixed(1)}%">${e.n}</span></div>`;
-    }).join('') : '<div class="more">No data</div>';
-    $('statNoKey').innerText = noKey;
-    $('statNoLoc').innerText = noLoc;
-    $('statKO').innerText = keyOnly.length;
-    $('statKoSub').textContent = keyOnly.length ? 'key-only: ' + keyOnly.length : '';
-}
-function goKO() { if (!keyOnly.length) return; showPage('sites'); if (!koFilter) toggleKO(); }
-
-// ---------- Dashboard: recent login + last key update (admin) ----------
-let dashLogs = [], dashLogTs = 0;
-function agoTxt(t) {
-    const m = Math.floor((Date.now() - t) / 60000);
-    if (m < 1) return 'ekhon'; if (m < 60) return m + ' min ago';
-    const h = Math.floor(m / 60); if (h < 24) return h + ' hours ago';
-    return Math.floor(h / 24) + ' din ago';
-}
-async function loadDashLogs(force) {
-    if (ROLE !== 'admin') return;
-    if (!force && dashLogs.length && Date.now() - dashLogTs < 60000) { renderDashLogs(); return; }
-    try {
-        const snap = await db.ref('activity_log').orderByKey().limitToLast(300).once('value');
-        const arr = []; snap.forEach(c => { arr.push(c.val()); });
-        dashLogs = arr.filter(Boolean).reverse(); dashLogTs = Date.now();
-        renderDashLogs();
-    } catch (e) {
-        const m = '<div class="more">Log load hoyni</div>';
-        if ($('dashLogin')) $('dashLogin').innerHTML = m; if ($('dashKey')) $('dashKey').innerHTML = m;
-    }
-}
-function renderDashLogs() {
-    const lg = dashLogs.filter(l => l.action === 'login' || l.action === 'login_blocked').slice(0, 8);
-    $('dashLogin').innerHTML = lg.length ? lg.map(l => {
-        const blocked = l.action === 'login_blocked';
-        const nm = (blocked ? l.site : l.name) || 'unknown';
-        return `<div class="dl"><span><b>${esc(nm)}</b> ${blocked ? '<span class="tag" style="color:var(--bad)">BLOCKED</span>' : `<span class="tag">${esc(l.role || '')}</span>`}</span><small title="${esc(fmtTs(l.ts))}">${esc(agoTxt(l.ts))}</small></div>`;
-    }).join('') : '<div class="more">Kono login history nai</div>';
-    const ku = dashLogs.filter(l => l.action === 'import_keys' || (['edit', 'add', 'merge'].includes(l.action) && /key/i.test(l.detail || ''))).slice(0, 5);
-    $('dashKey').innerHTML = ku.length ? ku.map(l =>
-        `<div class="dl c"><div><b>${esc(l.name || l.role || '-')}</b> ${l.site ? '· ' + esc(l.site) : ''}</div><small>${esc(String(l.detail || '').slice(0, 90))}</small><small>${esc(fmtTs(l.ts))}</small></div>`
-    ).join('') : '<div class="more">Kono key update history nai</div>';
-}
-
-const MAX_ROWS = 200;
-function getClientClass(c) {
-    c = c?.toString().toUpperCase() || '';
-    if (c.includes('GRAMEEN')) return 'tag-gp';
-    if (c.includes('ROBI')) return 'tag-robi';
-    if (c.includes('BANGLALINK')) return 'tag-bl';
-    return '';
-}
-const mapUrl = (r) => (r[5] && r[6] && r[5] !== '0' && r[6] !== '0')
-    ? `https://www.google.com/maps?q=${encodeURIComponent(r[5])},${encodeURIComponent(r[6])}` : null;
-
-function handleFilter() {
-    ensureIndexes();
-    const tokens = $('searchInput').value.trim().toUpperCase().split(/\s+/).filter(Boolean);
-    const match = makeMatcher(tokens);
-    let html = '', shown = 0, total = 0;
-    for (let i = 1; i < masterData.length; i++) {
-        const r = masterData[i];
-        if (!Array.isArray(r)) continue;
-        if (koFilter || (tokens.length && !match(i))) continue;
-        if (!passFilters(r)) continue;
-        total++;
-        if (shown >= MAX_ROWS) continue;
-        shown++;
-        const name = r[0] ? r[0].toString().trim() : '';
-        const map = mapUrl(r);
-        const key = findKeyInfo(name) || (r[2] || '-');
-        html += `<tr>
-            <td class="id" data-label="SITE">${esc(name) || '-'}</td>
-            <td data-label="IP"><code class="ipc">${esc(r[1]) || '-'}</code></td>
-            <td data-label="MODEL"><span><span style="font-size:11px;opacity:.6;display:block">${esc(r[3]) || '-'}</span><b>${esc(r[4]) || '-'}</b></span></td>
-            <td data-label="LOCATION">${map ? `<a href="${map}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;font-weight:700"><i class="fas fa-map-marker-alt"></i> MAP</a>` : '<span style="opacity:.4">N/A</span>'}</td>
-            <td data-label="CLIENT"><span class="tag ${getClientClass(r[7])}">${esc(r[7]) || 'N/A'}</span></td>
-            <td data-label="KEY"><span class="key-text">${esc(key)}</span></td>
-            <td class="ac"><div class="acts"><button class="op v" onclick="viewSite(${i})"><i class="fas fa-eye"></i> VIEW</button><button class="op write-only" onclick="quickEdit(${i})"><i class="fas fa-pen"></i> EDIT</button></div></td>
-        </tr>`;
-    }
-    if (koFilter || !Object.values(filt).some(Boolean)) {
-        const qid = tokens.length === 1 ? parseIds(tokens[0]) : [];
-        const qi = qid.length === 1 && qid[0].num.length >= 4 ? qid[0] : null;
-        for (let j = 0; j < keyOnly.length; j++) {
-            const o = keyOnly[j];
-            if (tokens.length && !(tokens.every(t => o.hay.includes(t)) ||
-                (qi && o.ids.some(m => m.num === qi.num && (!m.reg || !qi.reg || m.reg === qi.reg) && typOk(m.typ, qi.typ))))) continue;
-            total++;
-            if (shown >= MAX_ROWS) continue;
-            shown++;
-            html += `<tr class="ko-row">
-            <td class="id" data-label="SITE">${esc(o.name)}${o.names.length > 1 ? ' <small style="opacity:.6">+' + (o.names.length - 1) + '</small>' : ''}<br><span class="tag tag-ko">BTS data nai</span></td>
-            <td data-label="IP"><code class="ipc">-</code></td>
-            <td data-label="MODEL">-</td>
-            <td data-label="LOCATION"><span style="opacity:.4">N/A</span></td>
-            <td data-label="CLIENT"><span class="tag">N/A</span></td>
-            <td data-label="KEY"><span class="key-text">${esc(unesc(o.v))}</span></td>
-            <td class="ac"><div class="acts"><button class="op v" onclick="viewKO(${j})"><i class="fas fa-eye"></i> VIEW</button></div></td>
-        </tr>`;
-        }
-    }
-    if (total > shown) html += `<tr><td colspan="7" class="more">Showing ${shown} of ${total} - search kore narrow korun</td></tr>`;
-    if (!total) html = `<tr><td colspan="7" class="more">${masterData.length ? 'No match found' : 'No data'}</td></tr>`;
-    $('fullTable').innerHTML = html;
-}
-
-// ---------- View ----------
-function viewSite(i) {
-    if ($('pg-sites').classList.contains('active')) saveRecent();
-    const r = masterData[i] || [];
-    const name = (r[0] ?? '').toString().trim();
-    const key = findKeyInfo(name) || 'No key info available';
-    const map = mapUrl(r);
-    const F = [['Site', name], ['IP', r[1]], ['Client', r[7]], ['Sub-Center', r[2]], ['Node', r[3]], ['Model', r[4]]];
-    $('viewBody').innerHTML = F.map(([k, v]) => `<div class="kv"><span>${k}</span><b>${esc(v) || '-'}</b></div>`).join('')
-        + (map ? `<div class="kv"><span>Location</span><a href="${map}" target="_blank" rel="noopener"><i class="fas fa-map-marker-alt"></i> ${esc(r[5])}, ${esc(r[6])}</a></div>` : '')
-        + `<div class="kv full"><span>Key information</span><pre>${esc(key)}</pre></div>`;
-    viewIdx = i; viewKOIdx = -1;
-    $('viewEditBtn').innerHTML = '<i class="fas fa-pen"></i> Edit';
-    $('viewModal').classList.add('open');
-}
-function closeView() { $('viewModal').classList.remove('open'); }
-function editFromView() {
-    if (viewKOIdx >= 0) {   // key-only site ke master e add korar form
-        const o = keyOnly[viewKOIdx]; closeView(); toggleForm('add');
-        if (o) { $('editName').value = o.name; $('editKey').value = unesc(o.v); }
-        return;
-    }
-    const i = viewIdx; closeView(); quickEdit(i);
-}
-function viewKO(j) {
-    const o = keyOnly[j]; if (!o) return;
-    if ($('pg-sites').classList.contains('active')) saveRecent();
-    $('viewBody').innerHTML = `<div class="kv"><span>Site</span><b>${esc(o.names.join(' / '))}</b></div>`
-        + `<div class="kv"><span>Status</span><b><span class="tag tag-ko">BTS data not found</span></b></div>`
-        + `<div class="kv full"><span>Key information</span><pre>${esc(unesc(o.v))}</pre></div>`;
-    viewIdx = -1; viewKOIdx = j;
-    $('viewEditBtn').innerHTML = '<i class="fas fa-plus"></i> Add to Master';
-    $('viewModal').classList.add('open');
-}
-function copyText(txt) {
-    const ok = () => alert('✅ Copied');
-    const fb = () => { const a = document.createElement('textarea'); a.value = txt; a.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); ok(); } catch (_) { alert('Copy hoyni'); } a.remove(); };
-    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(txt).then(ok, fb); else fb();
-}
-function copyData() {
-    if (viewKOIdx >= 0) {
-        const o = keyOnly[viewKOIdx];
-        if (o) copyText('Site: ' + o.names.join(' / ') + '\nBTS data: nai\n\nKey information:\n' + unesc(o.v));
-        return;
-    }
-    const r = masterData[viewIdx] || [], name = s8(r[0]), map = mapUrl(r);
-    const L = [['Site', name], ['IP', r[1]], ['Client', r[7]], ['Sub-Center', r[2]], ['Node', r[3]], ['Model', r[4]]].map(([k, v]) => k + ': ' + (s8(v) || '-'));
-    if (map) L.push('Location: ' + s8(r[5]) + ', ' + s8(r[6]) + ' (' + map + ')');
-    L.push('', 'Key information:', findKeyInfo(name) || 'No key info available');
-    copyText(L.join('\n'));
-}
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeView(); toggleForm('hide'); closeNav(); } });
-
-// ---------- Add / Edit ----------
-function resetEditScroll() {
-    const box = $('editSection');
-    const sheet = box && box.querySelector('.sheet');
-    const grid = $('inputGrid');
-    const key = $('editKey');
-    if (sheet) sheet.scrollTop = 0;
-    if (grid) grid.scrollTop = 0;
-    if (key) key.scrollTop = 0;
-    if (document.activeElement && box && box.contains(document.activeElement)) document.activeElement.blur();
-}
-function toggleForm(mode) {
-    if (OFFLINE && mode !== 'hide') { alert('Offline mode e edit/add bondho'); return; }
-    const s = $('editSection');
-    if (!s) return;
-    if (mode === 'hide') { s.classList.remove('open'); return; }
-    if (mode === 'add') {
-        $('formTitle').innerText = 'New System Entry'; editOrigName = ''; editOrigKey = '';
-        s.querySelectorAll('.inp').forEach(i => i.value = '');
-    } else $('formTitle').innerText = 'Edit Record';
-    $('delBtn').style.display = editOrigName ? '' : 'none';
-    s.classList.add('open');
-    resetEditScroll();
-    requestAnimationFrame(() => requestAnimationFrame(resetEditScroll));
-}
-
-function quickEdit(index) {
-    const row = masterData[index];
-    if (!Array.isArray(row)) return;
-    const name = row[0] || '';
-    $('editName').value = name;
-    editOrigName = String(name).trim();
-    $('editIP').value = row[1] || '';
-    $('editSub').value = row[2] || '';
-    $('editNode').value = row[3] || '';
-    $('editModel').value = row[4] || '';
-    $('editLat').value = row[5] || '';
-    $('editLong').value = row[6] || '';
-    $('editClient').value = row[7] || '';
-    editOrigKey = findKeyInfo(name, true);
-    $('editKey').value = editOrigKey;
-    toggleForm('edit');
-}
-
-// ---------- Add / Edit save, duplicate check + merge ----------
-const HEAD8 = ["Site", "IP", "Sub-Center", "Node", "Model", "Lat", "Long", "Client"];
-const FIELD_L = ['Site', 'IP', 'Sub-Center', 'Node', 'Model', 'Lat', 'Long', 'Client'];
-const s8 = (v) => String(v ?? '').trim();
-const isEmptyF = (v, i) => { v = s8(v); return v === '' || ((i === 5 || i === 6) && (v === '0' || v === '0.0')); };
-let pendingDup = null;
-
-function findDup(name) {
-    ensureIndexes();
-    const u = name.toUpperCase(), ids = parseIds(name);
-    for (let i = 1; i < masterData.length; i++) {
-        const r = masterData[i];
-        if (!Array.isArray(r)) continue;
-        if (s8(r[0]).toUpperCase() === u) return i;
-        if (ids.some(a => a.reg && (masterIds[i] || []).some(b => b.reg === a.reg && b.num === a.num && typOk(a.typ, b.typ)))) return i;
-    }
-    return -1;
-}
-
-function setSaveBusy(on) {
-    const b = $('saveBtn'); if (!b) return;
-    b.disabled = on; b.textContent = on ? 'Saving...' : 'Save Record';
-}
-
-function updateMasterData() {
-    if (saving) return;
-    const name = $('editName').value.trim();
-    if (!name) { alert('Site Name dewa lagbe'); return; }
-    const v = (id) => $(id).value.trim();
-    const newRow = [name, v('editIP'), v('editSub'), v('editNode'), v('editModel'), v('editLat'), v('editLong'), v('editClient')];
-    const keyText = $('editKey').value.trim();
-    const editing = !!editOrigName;
-
-    let idx = -1, oldRow = null;
-    if (editing) {
-        // original row ta purono naam diye khujbo (notun naam diye na), tahole rename korle notun row hoy na
-        const o = editOrigName.toUpperCase();
-        idx = masterData.findIndex((r, i) => i > 0 && Array.isArray(r) && s8(r[0]).toUpperCase() === o);
-        if (idx === -1) { alert('This site not found (anybody can delete/rename).Open and then try again.'); toggleForm('hide'); return; }
-        oldRow = masterData[idx];
-        if (name.toUpperCase() !== o) {
-            const d = findDup(name);
-            if (d !== -1 && d !== idx) { alert('"' + s8(masterData[d][0]) + '" This site already exist, please try new name.'); return; }
-        }
-    } else {
-        const d = findDup(name);
-        if (d !== -1) { showDup(d, newRow, keyText); return; }
-    }
-
-    const nameChanged = editing && name.toUpperCase() !== editOrigName.toUpperCase();
-    const baseKey = editing ? editOrigKey : findKeyInfo(name, true);
-    const keyChanged = keyText !== baseKey;
-    const delKey = editing && !keyText && !!baseKey;          // key khali kore dile muche jabe
-    const writeKey = (keyText && (keyChanged || nameChanged)) ? keyText : '';  // key bodlale (ba rename hole) tobei likhbo
-
-    const changed = oldRow ? FIELD_L.map((l, i) => s8(oldRow[i]) !== s8(newRow[i]) ? l + ': ' + (s8(oldRow[i]) || '-') + ' → ' + (s8(newRow[i]) || '-') : '').filter(Boolean) : [];
-    if (writeKey) changed.push('Key');
-    if (delKey) changed.push('Key removed');
-    if (editing && !changed.length) { toggleForm('hide'); return; }   // kichu bodlayni
-
-    // HARD RESET: key edit korle ei site er purono shob key Firebase theke muche, shudhu notun ta thakbe
-    const purge = (editing && (writeKey || delKey)) ? matchedKeyNames(editOrigName) : [];
-    commitRow(idx, newRow, writeKey, name, editing ? 'edit' : 'add', name,
-        editing ? changed.join(' | ').slice(0, 580) : ([s8(newRow[1]), s8(newRow[7]), keyText ? 'with key' : ''].filter(Boolean).join(' · ')),
-        { delKey, keyName: editOrigName, purge });
-}
-
-function commitRow(idx, newRow, keyText, keyName, act, site, detail, opt) {
-    if (saving) return;
-    if (OFFLINE || !navigator.onLine) { alert('Offline: edit/add bondho. Internet ashle abar try korun.'); return; }
-    const newMaster = masterData.length ? [...masterData] : [HEAD8.slice()];
-    if (idx !== -1) newMaster[idx] = newRow; else newMaster.push(newRow);
-    let ops;
-    if (masterIsArr && masterData.length) ops = [db.ref('professor_master_db/' + (idx !== -1 ? idx : masterData.length)).set(newRow)];
-    else if (ROLE === 'admin') ops = [db.ref('professor_master_db').set(newMaster)];
-    else { alert('Ekhon save kora jachchhe na, Admin ke jananu.'); return; }
-    const sk = safeKey(keyName);
-    const delSk = opt && opt.delKey ? safeKey(opt.keyName) : '';
-    const purge = ((opt && opt.purge) || []).filter(k => !(keyText && k === sk));   // notun key er naam bad
-    if (keyText) ops.push(db.ref('professor_keys_db/' + sk).set(keyText));
-    if (delSk && !purge.includes(delSk)) ops.push(db.ref('professor_keys_db/' + delSk).remove());
-    purge.forEach(k => ops.push(db.ref('professor_keys_db/' + k).remove()));
-
-    saving = true; setSaveBusy(true);
-    let timedOut = false;
-    const release = () => { clearTimeout(tm); saving = false; setSaveBusy(false); };
-    // Firebase offline thakle promise atke thake; button jeno chirokal "Saving..." na thake
-    const tm = setTimeout(() => { timedOut = true; release(); alert('⏳ Get time to save. Check ypur Internet , After reach connection it will save auto.'); }, 15000);
-
-    Promise.all(ops).then(() => {
-        masterData = newMaster;
-        let kd = keysData;
-        if (keyText) kd = { ...kd, [sk]: keyText };
-        if (delSk || purge.length) { kd = { ...kd }; if (delSk) delete kd[delSk]; purge.forEach(k => delete kd[k]); }
-        keysData = kd;
-        logAct(act, site, detail);
-        release();
-        if (timedOut) { refreshUI_Internal(); return; }
-        alert((keyText || delSk) ? '✅ Record & Key Updated Successfully!' : '✅ Sir your data Updated Successfully!');
-        toggleForm('hide'); refreshUI_Internal();
-        if (delSk && findKeyInfo(keyName, true)) alert('ℹ️ This site own key removed, but different ID/Name sill show.');
-    }).catch(err => { release(); if (!timedOut) alert('❌ Firebase Error: ' + err.message); });
-}
-
-function showDup(i, newRow, keyText) {
-    pendingDup = { idx: i, newRow, keyText };
-    const old = masterData[i] || [];
-    $('dupInfo').textContent = '"' + s8(old[0]) + '" already ache. Ki korben?';
-    const rows = FIELD_L.map((l, k) => {
-        const a = s8(old[k]), b = s8(newRow[k]);
-        return (!b || a === b) ? '' : `<div class="kv"><span>${l}</span><b>${esc(a || '-')} → ${esc(b)}</b></div>`;
-    }).join('') + (keyText ? '<div class="kv"><span>Key info</span><b>notun key note ache</b></div>' : '');
-    $('dupBody').innerHTML = (rows || '<div class="sec-s">Notun kono alada value nei.</div>') +
-        '<div class="sec-s" style="margin-top:12px"><b>Merge:</b> khali field notun value diye bhorbe, key info jog hobe, existing data overwrite hobe na.<br><b>Update existing:</b> puro replace.</div>';
-    $('dupModal').classList.add('open');
-}
-
-function dupResolve(kind) {
-    const d = pendingDup;
-    $('dupModal').classList.remove('open');
-    if (kind === 'cancel' || !d) return;
-    pendingDup = null;
-    if (kind === 'update') { commitRow(d.idx, d.newRow, d.keyText, d.newRow[0], 'edit', d.newRow[0], 'replaced (duplicate)'); return; }
-    const old = masterData[d.idx] || [], exName = s8(old[0]), filled = [];
-    const row = FIELD_L.map((_, i) => {
-        if (i === 0) return exName;
-        if (isEmptyF(old[i], i) && !isEmptyF(d.newRow[i], i)) { filled.push(FIELD_L[i]); return d.newRow[i]; }
-        return old[i] ?? '';
-    });
-    const exKey = findKeyInfo(exName, true);
-    let keyOut = '';
-    if (d.keyText && !exKey.includes(d.keyText)) { keyOut = exKey ? exKey + SEP + d.keyText : d.keyText; filled.push('Key'); }
-    commitRow(d.idx, row, keyOut, exName, 'merge', exName, filled.join(', ') || 'nothing new');
-}
-
-// ---------- Dropdown filters (Client / Sub-Center / Model) ----------
-const filt = { client: '', sub: '', model: '' };
-const FCOL = { client: 7, sub: 2, model: 4 };
-const FLAB = { client: 'All Clients', sub: 'All Sub-Centers', model: 'All Models' };
-let filtSig = '';
-function passFilters(r) {
-    for (const k in filt) if (filt[k] && s8(r[FCOL[k]]).toUpperCase() !== filt[k]) return false;
-    return true;
-}
-function buildFilters() {
-    ensureIndexes(); if (!keyOnly.length) koFilter = false;
-    const opts = {};
-    for (const k in FCOL) {
-        const m = new Map();
-        for (let i = 1; i < masterData.length; i++) {
-            const r = masterData[i];
-            if (!Array.isArray(r)) continue;
-            const v = s8(r[FCOL[k]]);
-            if (v && !m.has(v.toUpperCase())) m.set(v.toUpperCase(), v);
-        }
-        opts[k] = [...m].sort((x, y) => x[1].localeCompare(y[1]));
-    }
-    const sig = JSON.stringify(opts) + '|' + keyOnly.length + '|' + koFilter;
-    if (sig === filtSig) return;
-    filtSig = sig;
-    for (const k in filt) if (filt[k] && !opts[k].some(([u]) => u === filt[k])) filt[k] = '';
-    const html = Object.keys(FCOL).map(k =>
-        `<select class="inp fsel" data-k="${k}" onchange="onFilter(this)"><option value="">${FLAB[k]}</option>` +
-        opts[k].map(([u, v]) => `<option value="${esc(u)}"${filt[k] === u ? ' selected' : ''}>${esc(v)}</option>`).join('') + '</select>'
-    ).join('') + '<button class="btn" onclick="clearFilters()"><i class="fas fa-filter-circle-xmark"></i> Clear filters</button>';
-    $('filtersSites').innerHTML = html + (keyOnly.length ? `<button class="btn${koFilter ? ' btn-p' : ''}" onclick="toggleKO()"><i class="fas fa-link-slash"></i> Key-only (${keyOnly.length})</button>` : '');
-    $('filtersMap').innerHTML = html;
-}
-function onFilter(el) {
-    filt[el.dataset.k] = el.value;
-    document.querySelectorAll('.fsel[data-k="' + el.dataset.k + '"]').forEach(x => x.value = el.value);
-    handleFilter(); if (mapOpen()) renderMap(true);
-}
-function toggleKO() { koFilter = !koFilter; filtSig = ''; buildFilters(); handleFilter(); }
-function clearFilters() {
-    for (const k in filt) filt[k] = '';
-    koFilter = false; filtSig = ''; buildFilters();
-    document.querySelectorAll('.fsel').forEach(x => x.value = '');
-    handleFilter(); if (mapOpen()) renderMap(true);
-}
-
-// ---------- Recent searches (browser e thake) ----------
-const RK = 'phoenix_recent';
-function recentGet() { try { return JSON.parse(localStorage.getItem(RK)) || []; } catch (_) { return []; } }
-function recentSet(a) { try { localStorage.setItem(RK, JSON.stringify(a.slice(0, 8))); } catch (_) {} }
-function saveRecent() {
-    const q = $('searchInput').value.trim().replace(/\s+/g, ' ');
-    if (q.length < 2) return;
-    recentSet([q, ...recentGet().filter(x => x.toUpperCase() !== q.toUpperCase())]);
-}
-function recentShow() {
-    const a = recentGet(), box = $('recentBox');
-    if (!a.length || $('searchInput').value.trim()) { box.style.display = 'none'; return; }
-    box.innerHTML = a.map((x, i) => `<button class="chip" data-i="${i}">${esc(x)}</button>`).join('') + '<button class="chip x" data-clear="1">Clear</button>';
-    box.style.display = 'flex';
-}
-function recentBlur() { setTimeout(() => { $('recentBox').style.display = 'none'; }, 300); }
-$('recentBox').addEventListener('mousedown', (e) => e.preventDefault());
-$('recentBox').addEventListener('click', (e) => {
-    const b = e.target.closest('button');
-    if (!b) return;
-    if (b.dataset.clear) recentSet([]);
-    else { const q = recentGet()[+b.dataset.i]; if (q) { $('searchInput').value = q; handleFilter(); saveRecent(); } }
-    $('recentBox').style.display = 'none'; $('searchInput').blur();
-});
-
-// ---------- Map (Leaflet + OpenStreetMap) ----------
-let map = null, cluster = null;
-const mapOpen = () => $('pg-map').classList.contains('active');
-function clientColor(c) {
-    c = s8(c).toUpperCase();
-    return c.includes('GRAMEEN') ? '#3b82f6' : c.includes('ROBI') ? '#ef4444' : c.includes('BANGLALINK') ? '#f59e0b' : '#8b95a8';
-}
-function addBaseTiles() {
-    // OSM 403 "Access blocked" chhobi pathay (error event ashe na), tai file:// / localhost e Esri default.
-    // https site (GitHub Pages) e OSM default. Dan pashe layer switch diye jekono shomoy bodlano jay.
-    const web = /^https:$/.test(location.protocol) && !/^(localhost|127\.|\[::1\])/.test(location.hostname);
-    const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, referrerPolicy: 'origin', attribution: '&copy; OpenStreetMap contributors' });
-    const esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Tiles &copy; Esri' });
-    const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Tiles &copy; Esri' });
-    (web ? osm : esri).addTo(map);
-    L.control.layers({ 'Street (OSM)': osm, 'Street (Esri)': esri, 'Satellite': sat }, null, { position: 'topright' }).addTo(map);
-}
-function openMap() {
-    if (typeof L === 'undefined' || !L.markerClusterGroup) { $('mapInfo').textContent = 'Map library load hoyni, internet check korun.'; return; }
-    if (!map) {
-        map = L.map('mapBox').setView([23.8, 90.4], 7);
-        addBaseTiles();
-        cluster = L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 50 }).addTo(map);
-    }
-    setTimeout(() => { map.invalidateSize(); renderMap(true); }, 50);
-}
-function renderMap(fit) {
-    if (!map) return;
-    cluster.clearLayers();
-    const mk = []; let skipped = 0;
-    for (let i = 1; i < masterData.length; i++) {
-        const r = masterData[i];
-        if (!Array.isArray(r) || !passFilters(r)) continue;
-        const lat = parseFloat(r[5]), lng = parseFloat(r[6]);
-        if (!isFinite(lat) || !isFinite(lng) || !lat || !lng || Math.abs(lat) > 90 || Math.abs(lng) > 180) { skipped++; continue; }
-        const m = L.marker([lat, lng], { icon: L.divIcon({ className: '', html: `<span class="mk" style="background:${clientColor(r[7])}"></span>`, iconSize: [14, 14], iconAnchor: [7, 7] }) });
-        const tip = document.createElement('span'); tip.textContent = s8(r[0]);
-        m.bindTooltip(tip);
-        m.on('click', () => viewSite(i));
-        mk.push(m);
-    }
-    cluster.addLayers(mk);
-    $('mapInfo').textContent = mk.length + ' ta pin' + (skipped ? ' (' + skipped + ' ta site e lat/long Not Applicable or Skipped)' : '');
-    if (fit && mk.length) map.fitBounds(cluster.getBounds(), { padding: [30, 30], maxZoom: 15 });
-}
-
-// ---------- Auto backup settings (server working) ----------
-async function bkCall(path, body) {
-    const tok = await auth.currentUser.getIdToken();
-    const r = await api(path, { method: 'POST', headers: { ...JSON_H, Authorization: 'Bearer ' + tok }, body: JSON.stringify(body || {}) });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(j.error || 'Failed');
-    return j;
-}
-function bkShow(j) {
-    $('bkFreq').value = j.freq || 'off';
-    $('bkInfo').textContent = 'Last backup: ' + (j.lastBackupAt ? fmtTs(j.lastBackupAt) : 'none') + (j.lastStatus ? ' · ' + j.lastStatus : '');
-}
-async function bkLoad() { try { bkShow(await bkCall('/admin/backup-config')); } catch (e) { $('bkInfo').textContent = 'Status load hoyni'; } }
-async function bkSave() { try { bkShow(await bkCall('/admin/backup-config', { freq: $('bkFreq').value })); } catch (e) { alert('❌ ' + e.message); bkLoad(); } }
-async function bkNow() {
-    $('bkInfo').textContent = 'Pathacchi...';
-    try { await bkCall('/admin/backup-now'); await bkLoad(); alert('✅ Backup Telegram e gese'); }
-    catch (e) { $('bkInfo').textContent = ''; alert('❌ ' + e.message); }
-}
-
-// ---------- Offline mode: last data PIN-encrypted kore IndexedDB e ----------
-function idbOpen() {
-    return new Promise((ok, no) => {
-        const q = indexedDB.open('phoenix', 1);
-        q.onupgradeneeded = () => q.result.createObjectStore('kv');
-        q.onsuccess = () => ok(q.result); q.onerror = () => no(q.error);
-    });
-}
-async function idbGet(k) {
-    const d = await idbOpen();
-    return new Promise((ok, no) => { const r = d.transaction('kv').objectStore('kv').get(k); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
-}
-async function idbSet(k, v) {
-    const d = await idbOpen();
-    return new Promise((ok, no) => { const t = d.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = () => ok(); t.onerror = () => no(t.error); });
-}
-async function idbDel(k) {
-    const d = await idbOpen();
-    return new Promise((ok, no) => { const t = d.transaction('kv', 'readwrite'); t.objectStore('kv').delete(k); t.oncomplete = () => ok(); t.onerror = () => no(t.error); });
-}
-async function hasSnap() { try { return !!((await idbGet('snap_admin')) || (await idbGet('snap_user'))); } catch (_) { return false; } }
-
-let snapKey = null, snapRole = '', snapSalt = null, snapTimer = null;
-async function deriveKey(pin, salt) {
-    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveKey']);
-    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 150000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
-}
-async function prepSnap(pin, role) {
-    if (!window.crypto || !crypto.subtle || (role !== 'admin' && role !== 'user')) return;
-    const rec = await idbGet('snap_' + role).catch(() => null);
-    snapSalt = (rec && rec.salt) || crypto.getRandomValues(new Uint8Array(16));
-    snapKey = await deriveKey(pin, snapSalt); snapRole = role;
-}
-function snapSoon() { clearTimeout(snapTimer); snapTimer = setTimeout(saveSnap, 3000); }
-async function saveSnap() {
-    if (!snapKey || !masterData.length) return;
-    try {
-        const iv = crypto.getRandomValues(new Uint8Array(12));
-        const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, snapKey,
-            new TextEncoder().encode(JSON.stringify({ master: masterData, keys: keysData, ts: Date.now() })));
-        await idbSet('snap_' + snapRole, { salt: snapSalt, iv, data });
-    } catch (e) { console.warn('Snapshot save failed', e); }
-}
-async function offlineUnlock(pin) {
-    for (const role of ['admin', 'user']) {
-        try {
-            const rec = await idbGet('snap_' + role);
-            if (!rec) continue;
-            const buf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: rec.iv }, await deriveKey(pin, rec.salt), rec.data);
-            enterOffline(JSON.parse(new TextDecoder().decode(buf)));
-            return true;
-        } catch (_) {}   
-    }
-    return false;
-}
-function enterOffline(o) {
-    OFFLINE = true; ROLE = 'offline';
-    document.body.dataset.role = 'offline';
-    $('roleTag').textContent = 'OFFLINE';
-    masterData = Array.isArray(o.master) ? o.master : []; keysData = o.keys || {}; masterIsArr = false;
-    $('loginGate').style.display = 'none'; $('app').style.display = 'flex';
-    startIdle(); showPage('dash'); refreshUI_Internal();
-    $('statTime').innerText = new Date(o.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-function exitOffline() {
-    OFFLINE = false; ROLE = ''; stopIdle();
-    masterData = []; keysData = {};
-    document.body.dataset.role = ''; $('roleTag').textContent = '';
-    $('fullTable').innerHTML = '';
-    $('app').style.display = 'none'; $('loginGate').style.display = 'flex';
-}
-async function clearOffline() {
-    if (!confirm('Ei device e save kora offline data muche felben? (Pore online login korle abar save hobe)')) return;
-    try { await idbDel('snap_admin'); await idbDel('snap_user'); alert('✅ Offline data muche gese'); } catch (e) { alert('❌ ' + e.message); }
-}
-function netHint() { $('offHint').style.display = navigator.onLine ? 'none' : 'block'; }
-window.addEventListener('offline', netHint);
-window.addEventListener('online', () => { netHint(); if (OFFLINE) { exitOffline(); loginNote('Online ashe gese, abar login korun'); } });
-netHint();
-
-// ---------- PWA ----------
-if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
-
-// ---------- Wipe / Export / Push ----------
-async function wipeData() {
-    if (!(await askPin('wipe Master Data'))) return;
-    if (confirm('Are you absolutely sure you want to wipe Master Data?'))
-        db.ref('professor_master_db').remove().then(async () => { await logAct('wipe_master'); alert('✅ Master Data Wiped!'); location.reload(); })
-            .catch(err => alert('❌ Firebase Error: ' + err.message));
-}
-async function wipeKeyData() {
-    if (!(await askPin('wipe Key Data'))) return;
-    if (confirm('Are you absolutely sure you want to wipe Key Data?'))
-        db.ref('professor_keys_db').remove().then(async () => { await logAct('wipe_keys'); alert('✅ Key Data Wiped!'); location.reload(); })
-            .catch(err => alert('❌ Firebase Error: ' + err.message));
-}
-async function exportMaster() {
-    if (!(await askPin('export Master Data'))) return;
-    logAct('export_master');
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(masterData), 'MasterData');
-    XLSX.writeFile(wb, 'Phoenix_Master_Backup.xlsx');
-}
-async function exportKeys() {
-    if (!(await askPin('export Key Data'))) return;
-    logAct('export_keys');
-    const arr = [["Site Name", "Key Info"]];
-    for (const k in keysData) arr.push([k, keysData[k]]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(arr), 'KeysData');
-    XLSX.writeFile(wb, 'Phoenix_Keys_Backup.xlsx');
-}
-
-async function pushToTelegram() {
-    if (ROLE !== 'admin' || !masterData.length) return;
-    const st = $('pushStatus');
-    st.textContent = 'Pushing...';
-    try {
-        const tok = await auth.currentUser.getIdToken();
-        const r = await api('/admin/push', { method: 'POST', headers: { Authorization: 'Bearer ' + tok } });
-        st.textContent = r.ok ? '✅ Master + Keys Telegram e gese' : '❌ Push failed';
-    } catch (e) { st.textContent = '❌ Push error'; }
-    setTimeout(() => st.textContent = '', 3000);
-}
-
-// Inspect Element-e type change kora block korar script
-const pinInput = $('pinIn');
-if (pinInput) {
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.type === 'attributes' && mutation.attributeName === 'type') {
-                if (pinInput.getAttribute('type') !== 'password') {
-                    pinInput.setAttribute('type', 'password');
-                }
-            }
-        });
-    });
-    observer.observe(pinInput, { attributes: true });
-}
-
-</script>
+</div><!-- /#app -->
+
+<div id="printRoot"></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="loader" id="loader" hidden><div class="spin"></div><span id="loaderText">Working…</span></div>
+<input type="file" id="restoreInput" accept=".xlsx,.xls,.json" hidden>
+
+<datalist id="dl-client"></datalist>
+<datalist id="dl-assign"></datalist>
+<datalist id="dl-team"></datalist>
+<datalist id="dl-site"></datalist>
+
+<script src="theme.js"></script>
+<script src="app.js"></script>
+<script src="personal.js"></script>
+<script src="calendar-day.js"></script>
+<script src="ui.js"></script>
+<script src="extras.js"></script>
 </body>
 </html>
