@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "btsintel",
     "public": ".",
     "ignore": [
       "firebase.json",
