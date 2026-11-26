@@ -300,7 +300,17 @@ bot.command('version', async (ctx) => {
 });
 
 bot.on('text', async (ctx) => {
-    let rawQuery = ctx.message.text.toUpperCase().trim();
+    let msgText = ctx.message.text;
+    // Group/supergroup e @mention (ba bot er message e reply) na korle kichu korbe na
+    if (ctx.chat.type !== 'private') {
+        const uname = String((ctx.botInfo && ctx.botInfo.username) || '').toLowerCase();
+        const mentionRe = new RegExp('@' + uname + '\\b', 'i');
+        const isReplyToBot = ctx.message.reply_to_message && ctx.message.reply_to_message.from &&
+            String(ctx.message.reply_to_message.from.username || '').toLowerCase() === uname;
+        if (!uname || !(mentionRe.test(msgText) || isReplyToBot)) return;
+        msgText = msgText.replace(mentionRe, ' ');
+    }
+    let rawQuery = msgText.toUpperCase().trim();
     if (rawQuery.startsWith('/')) return;
 
     let isKeyOnly = false;
